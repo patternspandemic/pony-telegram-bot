@@ -450,249 +450,438 @@ class InlineQuery
         query = json.data("query") as String
         offset = json.data("offset") as String
 
-// INCOMPLETE v
-
 class InlineQueryResultArticle
     var type': String
     var id: String
+    var title: String
     var input_message_content: JsonObject // InputMessageContent
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var url: Optional[String] = None
+    var hide_url: Optional[Bool] = None
+    var description: Optional[String] = None
+    var thumb_url: Optional[String] = None
+    var thumb_width: Optional[I64] = None
+    var thumb_height: Optional[I64] = None
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
+        title = json.data("title") as String
         input_message_content = json.data("input_message_content") as JsonObject
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        url = try json.data("url") as String end
+        hide_url = try json.data("hide_url") as Bool end
+        description = try json.data("description") as String end
+        thumb_url = try json.data("thumb_url") as String end
+        thumb_width = try json.data("thumb_width") as I64 end
+        thumb_height = try json.data("thumb_height") as I64 end
 
 class InlineQueryResultPhoto
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var photo_url: String
+    var thumb_url: String
+    var photo_width: Optional[I64] = None
+    var photo_height: Optional[I64] = None
+    var title: Optional[String] = None
+    var description: Optional[String] = None
+    var caption: Optional[String] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        photo_url = json.data("photo_url") as String
+        thumb_url = json.data("thumb_url") as String
+        photo_width = try json.data("photo_width") as I64 end
+        photo_height = try json.data("photo_height") as I64 end
+        title = try json.data("title") as String end
+        description = try json.data("description") as String end
+        caption = try json.data("caption") as String end
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        input_message_content = try json.data("input_message_content") as JsonObject end
+
 
 class InlineQueryResultGif
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var gif_url: String
+    var gif_width: Optional[I64] = None
+    var gif_height: Optional[I64] = None
+    var thumb_url: String
+    var title: Optional[String] = None
+    var caption: Optional[String] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        gif_url = json.data("gif_url") as String
+        gif_width = try json.data("gif_width") as I64 end
+        gif_height = try json.data("gif_height") as I64 end
+        thumb_url = json.data("thumb_url") as String
+        title = try json.data("title") as String end
+        caption = try json.data("caption") as String end
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        input_message_content = try json.data("input_message_content") as JsonObject end
 
 class InlineQueryResultMpeg4Gif
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var mpeg4_url: String
+    var mpeg4_width: Optional[I64] = None
+    var mpeg4_height: Optional[I64] = None
+    var thumb_url: String
+    var title: Optional[String] = None
+    var caption: Optional[String] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        mpeg4_url = json.data("mpeg4_url") as String
+        mpeg4_width = try json.data("mpeg4_width") as I64 end
+        mpeg4_height = try json.data("mpeg4_height") as I64 end
+        thumb_url = json.data("thumb_url") as String
+        title = try json.data("title") as String end
+        caption = try json.data("caption") as String end
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        input_message_content = try json.data("input_message_content") as JsonObject end
 
 class InlineQueryResultVideo
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var video_url: String
+    var mime_type: String
+    var thumb_url: String
+    var title: String
+    var caption: Optional[String] = None
+    var video_width: Optional[I64] = None
+    var video_height: Optional[I64] = None
+    var video_duration: Optional[I64] = None
+    var description: Optional[String] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        video_url = json.data("video_url") as String
+        mime_type = json.data("mime_type") as String
+        thumb_url = json.data("thumb_url") as String
+        title = json.data("title") as String
+        caption = try json.data("caption") as String end
+        video_width = try json.data("video_width") as I64 end
+        video_height = try json.data("video_height") as I64 end
+        video_duration = try json.data("video_duration") as I64 end
+        description = try json.data("description") as String end
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        input_message_content = try json.data("input_message_content") as JsonObject end
 
 class InlineQueryResultAudio
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var audio_url: String
+    var title: String
+    var caption: Optional[String] = None
+    var performer: Optional[String] = None
+    var audio_duration: Optional[I64] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        audio_url = json.data("audio_url") as String
+        title = json.data("title") as String
+        caption = try json.data("caption") as String end
+        performer = try json.data("performer") as String end
+        audio_duration = try json.data("audio_duration") as I64 end
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        input_message_content = try json.data("input_message_content") as JsonObject end
 
 class InlineQueryResultVoice
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var voice_url: String
+    var title: String
+    var caption: Optional[String] = None
+    var voice_duration: Optional[I64] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        voice_url = json.data("voice_url") as String
+        title = json.data("title") as String
+        caption = try json.data("caption") as String end
+        voice_duration = try json.data("voice_duration") as I64 end
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        input_message_content = try json.data("input_message_content") as JsonObject end
 
 class InlineQueryResultDocument
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var title: String
+    var caption: Optional[String] = None
+    var document_url: String
+    var mime_type: String
+    var description: Optional[String] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
+    var thumb_url: Optional[String] = None
+    var thumb_width: Optional[I64] = None
+    var thumb_height: Optional[I64] = None
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        title = json.data("title") as String
+        caption = try json.data("caption") as String end
+        document_url = json.data("document_url") as String
+        mime_type = json.data("mime_type") as String
+        description = try json.data("description") as String end
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        input_message_content = try json.data("input_message_content") as JsonObject end
+        thumb_url = try json.data("thumb_url") as String end
+        thumb_width = try json.data("thumb_width") as I64 end
+        thumb_height = try json.data("thumb_height") as I64 end
 
 class InlineQueryResultLocation
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var latitude: F64
+    var longitude: F64
+    var title: String
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
+    var thumb_url: Optional[String] = None
+    var thumb_width: Optional[I64] = None
+    var thumb_height: Optional[I64] = None
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        latitude = json.data("latitude") as F64
+        longitude = json.data("longitude") as F64
+        title = json.data("title") as String
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        input_message_content = try json.data("input_message_content") as JsonObject end
+        thumb_url = try json.data("thumb_url") as String end
+        thumb_width = try json.data("thumb_width") as I64 end
+        thumb_height = try json.data("thumb_height") as I64 end
 
 class InlineQueryResultVenue
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var latitude: F64
+    var longitude: F64
+    var title: String
+    var address: String
+    var foursquare_id: Optional[String] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
+    var thumb_url: Optional[String] = None
+    var thumb_width: Optional[I64] = None
+    var thumb_height: Optional[I64] = None
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        latitude = json.data("latitude") as F64
+        longitude = json.data("longitude") as F64
+        title = json.data("title") as String
+        address = json.data("address") as String
+        foursquare_id = try json.data("foursquare_id") as String end
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        input_message_content = try json.data("input_message_content") as JsonObject end
+        thumb_url = try json.data("thumb_url") as String end
+        thumb_width = try json.data("thumb_width") as I64 end
+        thumb_height = try json.data("thumb_height") as I64 end
 
 class InlineQueryResultContact
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var phone_number: String
+    var first_name: String
+    var last_name: Optional[String] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
+    var thumb_url: Optional[String] = None
+    var thumb_width: Optional[I64] = None
+    var thumb_height: Optional[I64] = None
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        phone_number = json.data("phone_number") as String
+        first_name = json.data("first_name") as String
+        last_name = try json.data("last_name") as String end
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        input_message_content = try json.data("input_message_content") as JsonObject end
+        thumb_url = try json.data("thumb_url") as String end
+        thumb_width = try json.data("thumb_width") as I64 end
+        thumb_height = try json.data("thumb_height") as I64 end
 
 class InlineQueryResultGame
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var game_short_name: String
     var reply_markup: Optional[InlineKeyboardMarkup] = None
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        game_short_name = json.data("game_short_name") as String
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
 
 class InlineQueryResultCachedPhoto
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var photo_file_id: String
+    var title: Optional[String] = None
+    var description: Optional[String] = None
+    var caption: Optional[String] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        photo_file_id = json.data("photo_file_id") as String
+        title = try json.data("title") as String end
+        description = try json.data("description") as String end
+        caption = try json.data("caption") as String end
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        input_message_content = try json.data("input_message_content") as JsonObject end
 
 class InlineQueryResultCachedGif
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var gif_file_id: String
+    var title: Optional[String] = None
+    var caption: Optional[String] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        gif_file_id = json.data("gif_file_id") as String
+        title = try json.data("title") as String end
+        caption = try json.data("caption") as String end
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        input_message_content = try json.data("input_message_content") as JsonObject end
 
 class InlineQueryResultCachedMpeg4Gif
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var mpeg4_file_id: String
+    var title: Optional[String] = None
+    var caption: Optional[String] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        mpeg4_file_id = json.data("mpeg4_file_id") as String
+        title = try json.data("title") as String end
+        caption = try json.data("caption") as String end
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        input_message_content = try json.data("input_message_content") as JsonObject end
 
 class InlineQueryResultCachedSticker
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var sticker_file_id: String
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        sticker_file_id = json.data("sticker_file_id") as String
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        input_message_content = try json.data("input_message_content") as JsonObject end
 
 class InlineQueryResultCachedDocument
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var title: String
+    var document_file_id: String
+    var description: Optional[String] = None
+    var caption: Optional[String] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        title = json.data("title") as String
+        document_file_id = json.data("document_file_id") as String
+        description = try json.data("description") as String end
+        caption = try json.data("caption") as String end
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        input_message_content = try json.data("input_message_content") as JsonObject end
 
 class InlineQueryResultCachedVideo
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var video_file_id: String
+    var title: String
+    var description: Optional[String] = None
+    var caption: Optional[String] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        video_file_id = json.data("video_file_id") as String
+        title = json.data("title") as String
+        description = try json.data("description") as String end
+        caption = try json.data("caption") as String end
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        input_message_content = try json.data("input_message_content") as JsonObject end
 
 class InlineQueryResultCachedVoice
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var voice_file_id: String
+    var title: String
+    var caption: Optional[String] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        voice_file_id = json.data("voice_file_id") as String
+        title = json.data("title") as String
+        caption = try json.data("caption") as String end
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
+        input_message_content = try json.data("input_message_content") as JsonObject end
 
 class InlineQueryResultCachedAudio
     var type': String
     var id: String
-    var input_message_content: JsonObject // InputMessageContent
+    var audio_file_id: String
+    var caption: Optional[String] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
+    var input_message_content: Optional[JsonObject] = None // InputMessageContent
 
     new create(json: JsonObject) ? =>
         type' = json.data("type") as String
         id = json.data("id") as String
-        input_message_content = json.data("input_message_content") as JsonObject
+        audio_file_id = json.data("audio_file_id") as String
+        caption = try json.data("caption") as String end
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
-
-// INCOMPLETE ^
+        input_message_content = try json.data("input_message_content") as JsonObject end
 
 type InputMessageContent is (InputTextMessageContent | InputLocationMessageContent | InputVenueMessageContent | InputContactMessageContent)
 
