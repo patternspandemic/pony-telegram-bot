@@ -32,6 +32,38 @@ type ParseModeType is (Markdown | HTML)
 ... primitives
 */
 
+type Updates is Array[Update]
+
+class Update
+    var update_id: I64
+    var message: Optional[Message] = None
+    var edited_message: Optional[Message] = None
+    var channel_post: Optional[Message] = None
+    var edited_channel_post: Optional[Message] = None
+    var inline_query: Optional[InlineQuery] = None
+    var chosen_inline_result: Optional[ChosenInlineResult] = None
+    var callback_query: Optional[CallbackQuery] = None
+
+    new create(json: JsonObject) ? =>
+        update_id = json.data("update_id") as I64
+        message = try Message(json.data("message") as JsonObject) end
+        edited_message = try Message(json.data("edited_message") as JsonObject) end
+        channel_post = try Message(json.data("channel_post") as JsonObject) end
+        edited_channel_post = try Message(json.data("edited_channel_post") as JsonObject) end
+        inline_query = try InlineQuery(json.data("inline_query") as JsonObject) end
+        chosen_inline_result = try ChosenInlineResult(json.data("chosen_inline_result") as JsonObject) end
+        callback_query = try CallbackQuery(json.data("callback_query") as JsonObject) end
+
+class WebhookInfo
+    var url: String
+    var has_custom_certificate: Bool
+    var pending_update_count: I64
+    var last_error_date: Optional[I64] = None
+    var last_error_message: Optional[String] = None
+    var max_connections: Optional[I64] = None
+    var allowed_updates: Optional[Array[String]] = None
+
+
 class User
     var id: I64
     var first_name: String
