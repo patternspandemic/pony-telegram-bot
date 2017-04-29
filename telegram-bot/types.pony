@@ -17,6 +17,8 @@ use "itertools"
 
 type Optional[T] is (T | None)
 
+type ReplyMarkup is (InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply)
+
 /*
 type ChatType is (Private | Group | SuperGroup | Channel)
 ... primitives
@@ -481,6 +483,29 @@ class InlineQuery
         location = try Location(json.data("location") as JsonObject) end
         query = json.data("query") as String
         offset = json.data("offset") as String
+
+type InlineQueryResult is (
+    InlineQueryResultArticle |
+    InlineQueryResultPhoto |
+    InlineQueryResultCachedPhoto |
+    InlineQueryResultGif |
+    InlineQueryResultCachedGif |
+    InlineQueryResultMpeg4Gif |
+    InlineQueryResultCachedMpeg4Gif |
+    InlineQueryResultVideo |
+    InlineQueryResultCachedVideo |
+    InlineQueryResultAudio |
+    InlineQueryResultCachedAudio |
+    InlineQueryResultVoice |
+    InlineQueryResultCachedVoice |
+    InlineQueryResultDocument |
+    InlineQueryResultCachedDocument |
+    InlineQueryResultLocation |
+    InlineQueryResultVenue |
+    InlineQueryResultContact |
+    InlineQueryResultGame |
+    InlineQueryResultCachedSticker
+)
 
 class InlineQueryResultArticle
     var type': String
