@@ -484,28 +484,28 @@ class InlineQuery
         query = json.data("query") as String
         offset = json.data("offset") as String
 
-type InlineQueryResult is (
-    InlineQueryResultArticle |
-    InlineQueryResultPhoto |
-    InlineQueryResultCachedPhoto |
-    InlineQueryResultGif |
-    InlineQueryResultCachedGif |
-    InlineQueryResultMpeg4Gif |
-    InlineQueryResultCachedMpeg4Gif |
-    InlineQueryResultVideo |
-    InlineQueryResultCachedVideo |
-    InlineQueryResultAudio |
-    InlineQueryResultCachedAudio |
-    InlineQueryResultVoice |
-    InlineQueryResultCachedVoice |
-    InlineQueryResultDocument |
-    InlineQueryResultCachedDocument |
-    InlineQueryResultLocation |
-    InlineQueryResultVenue |
-    InlineQueryResultContact |
-    InlineQueryResultGame |
-    InlineQueryResultCachedSticker
-)
+type InlineQueryResult is
+    ( InlineQueryResultArticle
+    | InlineQueryResultPhoto
+    | InlineQueryResultCachedPhoto
+    | InlineQueryResultGif
+    | InlineQueryResultCachedGif
+    | InlineQueryResultMpeg4Gif
+    | InlineQueryResultCachedMpeg4Gif
+    | InlineQueryResultVideo
+    | InlineQueryResultCachedVideo
+    | InlineQueryResultAudio
+    | InlineQueryResultCachedAudio
+    | InlineQueryResultVoice
+    | InlineQueryResultCachedVoice
+    | InlineQueryResultDocument
+    | InlineQueryResultCachedDocument
+    | InlineQueryResultLocation
+    | InlineQueryResultVenue
+    | InlineQueryResultContact
+    | InlineQueryResultGame
+    | InlineQueryResultCachedStick
+    )
 
 class InlineQueryResultArticle
     var type': String
@@ -940,7 +940,12 @@ class InlineQueryResultCachedAudio
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
         input_message_content = try json.data("input_message_content") as JsonObject end
 
-type InputMessageContent is (InputTextMessageContent | InputLocationMessageContent | InputVenueMessageContent | InputContactMessageContent)
+type InputMessageContent is
+    ( InputTextMessageContent
+    | InputLocationMessageContent
+    | InputVenueMessageContent
+    | InputContactMessageContent
+    )
 
 class InputTextMessageContent
     var message_text: String

@@ -5,15 +5,47 @@ https://core.telegram.org/bots/api#available-methods
 
 // TODO: Perhaps turn these methods into actors/behaviors.
 //   OR: Members of a primitive?
+//   OR: Object literals closing over param data
 //   OR: Some combo?
+
+trait TelegramMethod
+
+//trait PossiblyUnavailableChatMethod
+type PossiblyUnavailableChatMethod is
+    ( SendMessage
+    | ForwardMessage
+    | SendPhoto
+    | SendAudio
+    | SendDocument
+    | SendSticker
+    | SendVideo
+    | SendVoice
+    | SendLocation
+    | SendVenue
+    | SendContact
+    | SendChatAction
+    | KickChatMember
+    | LeaveChat
+    | UnbanChatMember
+    | GetChat
+    | GetChatAdministrators
+    | GetChatMembersCount
+    | GetChatMember
+    | EditMessageText
+    | EditMessageCaption
+    | EditMessageReplyMarkup
+    | SendGame
+    | SetGameScore
+    | GetGameHighScores
+    )
 
 type ChatIdentifier is (I64 | String)
 
 // getMe -> User
-class GetMe
+class GetMe is TelegramMethod
 
 // sendMessage -> Message
-class SendMessage
+class SendMessage is TelegramMethod
     var chat_id: ChatIdentifier
     var text: String
     var parse_mode: Optional[String] = None
@@ -23,14 +55,14 @@ class SendMessage
     var reply_markup: Optional[ReplyMarkup] = None
 
 // forwardMessage -> Message
-class ForwardMessage
+class ForwardMessage is TelegramMethod
     var chat_id: ChatIdentifier
     var from_chat_id: ChatIdentifier
     var disable_notification: Optional[Bool] = None
     var message_id: I64
 
 // sendPhoto -> Message
-class SendPhoto
+class SendPhoto is TelegramMethod
     var chat_id: ChatIdentifier
     var photo: String
     var caption: Optional[String] = None
@@ -39,7 +71,7 @@ class SendPhoto
     var reply_markup: Optional[ReplyMarkup] = None
 
 // sendAudio -> Message
-class SendAudio
+class SendAudio is TelegramMethod
     var chat_id: ChatIdentifier
     var audio: String
     var caption: Optional[String] = None
@@ -51,7 +83,7 @@ class SendAudio
     var reply_markup: Optional[ReplyMarkup] = None
 
 // sendDocument -> Message
-class SendDocument
+class SendDocument is TelegramMethod
     var chat_id: ChatIdentifier
     var document: String
     var caption: Optional[String] = None
@@ -60,7 +92,7 @@ class SendDocument
     var reply_markup: Optional[ReplyMarkup] = None
 
 // sendSticker -> Message
-class SendSticker
+class SendSticker is TelegramMethod
     var chat_id: ChatIdentifier
     var sticker: String
     var caption: Optional[String] = None
@@ -69,7 +101,7 @@ class SendSticker
     var reply_markup: Optional[ReplyMarkup] = None
 
 // sendVideo -> Message
-class SendVideo
+class SendVideo is TelegramMethod
     var chat_id: ChatIdentifier
     var video: String
     var duration: Optional[I64] = None
@@ -81,7 +113,7 @@ class SendVideo
     var reply_markup: Optional[ReplyMarkup] = None
 
 // sendVoice -> Message
-class SendVoice
+class SendVoice is TelegramMethod
     var chat_id: ChatIdentifier
     var voice: String
     var caption: Optional[String] = None
@@ -91,7 +123,7 @@ class SendVoice
     var reply_markup: Optional[ReplyMarkup] = None
 
 // sendLocation -> Message
-class SendLocation
+class SendLocation is TelegramMethod
     var chat_id: ChatIdentifier
     var latitude: F64
     var longitude: F64
@@ -100,7 +132,7 @@ class SendLocation
     var reply_markup: Optional[ReplyMarkup] = None
 
 // sendVenue -> Message
-class SendVenue
+class SendVenue is TelegramMethod
     var chat_id: ChatIdentifier
     var latitude: F64
     var longitude: F64
@@ -112,7 +144,7 @@ class SendVenue
     var reply_markup: Optional[ReplyMarkup] = None
 
 // sendContact -> Message
-class SendContact
+class SendContact is TelegramMethod
     var chat_id: ChatIdentifier
     var phone_number: String
     var first_name: String
@@ -122,53 +154,53 @@ class SendContact
     var reply_markup: Optional[ReplyMarkup] = None
 
 // sendChatAction -> True
-class SendChatAction
+class SendChatAction is TelegramMethod
     var chat_id: ChatIdentifier
     var action: String
 
 // getUserProfilePhotos -> UserProfilePhotos
-class GetUserProfilePhotos
+class GetUserProfilePhotos is TelegramMethod
     var user_id: I64
     var offset: Optional[I64] = None
     var limit: Optional[I64] = None
 
 // getFile -> File
-class GetFile
+class GetFile is TelegramMethod
     var file_id: String
 
 // kickChatMember -> True
-class KickChatMember
+class KickChatMember is TelegramMethod
     var chat_id: ChatIdentifier
     var user_id: I64
 
 // leaveChat -> True
-class LeaveChat
+class LeaveChat is TelegramMethod
     var chat_id: ChatIdentifier
 
 // unbanChatMember -> True
-class UnbanChatMember
+class UnbanChatMember is TelegramMethod
     var chat_id: ChatIdentifier
     var user_id: I64
 
 // getChat -> Chat
-class GetChat
+class GetChat is TelegramMethod
     var chat_id: ChatIdentifier
 
 // getChatAdministrators -> Array[ChatMember]
-class GetChatAdministrators
+class GetChatAdministrators is TelegramMethod
     var chat_id: ChatIdentifier
 
 // getChatMembersCount -> I64
-class GetChatMembersCount
+class GetChatMembersCount is TelegramMethod
     var chat_id: ChatIdentifier
 
 // getChatMember -> ChatMember
-class GetChatMember
+class GetChatMember is TelegramMethod
     var chat_id: ChatIdentifier
     var user_id: I64
 
 // answerCallbackQuery -> True
-class AnswerCallbackQuery
+class AnswerCallbackQuery is TelegramMethod
     var callback_query_id: String
     var text: Optional[String] = None
     var show_alert: Optional[Bool] = None
@@ -176,7 +208,7 @@ class AnswerCallbackQuery
     var cache_time: Optional[I64] = None
 
 // editMessageText -> Message | True
-class EditMessageText
+class EditMessageText is TelegramMethod
     var chat_id: Optional[ChatIdentifier] = None
     var message_id: Optional[I64] = None
     var inline_message_id: Optional[String] = None
@@ -186,7 +218,7 @@ class EditMessageText
     var reply_markup: Optional[InlineKeyboardMarkup] = None
 
 // editMessageCaption -> Message | True
-class EditMessageCaption
+class EditMessageCaption is TelegramMethod
     var chat_id: Optional[ChatIdentifier] = None
     var message_id: Optional[I64] = None
     var inline_message_id: Optional[String] = None
@@ -194,14 +226,14 @@ class EditMessageCaption
     var reply_markup: Optional[InlineKeyboardMarkup] = None
 
 // editMessageReplyMarkup -> Message | True
-class EditMessageReplyMarkup
+class EditMessageReplyMarkup is TelegramMethod
     var chat_id: Optional[ChatIdentifier] = None
     var message_id: Optional[I64] = None
     var inline_message_id: Optional[String] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
 
 // answerInlineQuery -> True
-class AnswerInlineQuery
+class AnswerInlineQuery is TelegramMethod
     var inline_query_id: String
     var results: Array[InlineQueryResult]
     var cache_time: Optional[I64] = None
@@ -211,7 +243,7 @@ class AnswerInlineQuery
     var switch_pm_parameter: Optional[String] = None
 
 // sendGame -> Message
-class SendGame
+class SendGame is TelegramMethod
     var chat_id: ChatIdentifier
     game_short_name
     var disable_notification: Optional[Bool] = None
@@ -219,7 +251,7 @@ class SendGame
     var reply_markup: Optional[InlineKeyboardMarkup] = None
 
 // setGameScore -> ?
-class SetGameScore
+class SetGameScore is TelegramMethod
     var user_id: I64
     var score: I64
     var force: Optional[Bool] = None
@@ -229,7 +261,7 @@ class SetGameScore
     var inline_message_id: Optional[String] = None
 
 // getGameHighScores -> Array[GameHighScore]
-class GetGameHighScores
+class GetGameHighScores is TelegramMethod
     var user_id: I64
     var chat_id: Optional[I64] = None
     var message_id: Optional[I64] = None
