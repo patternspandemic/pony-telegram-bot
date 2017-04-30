@@ -9,6 +9,8 @@ https://core.telegram.org/bots/api#available-methods
 //   OR: Some combo?
 
 trait TelegramMethod
+    fun method(): String => "GET"
+
 
 //trait PossiblyUnavailableChatMethod
 type PossiblyUnavailableChatMethod is
