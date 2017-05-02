@@ -112,7 +112,7 @@ actor _TelegramAPICall
         end
         // Get response payload
         // error check?
-        // fullfill/Reject a promise?
+        
 
     be have_body(data: ByteSeq val) =>
         // Handle body data
@@ -121,6 +121,7 @@ actor _TelegramAPICall
     be finished() =>
         _env.out.print("-- end of body --")
         // Set the api on the object
+        // fullfill/Reject a promise?
         // Callback to TelegramMethod with finished response object?
 
 

@@ -8,9 +8,11 @@ https://core.telegram.org/bots/api#available-methods
 //   OR: Object literals closing over param data
 //   OR: Some combo?
 
+type TelegramObjectifier is {(JsonObject, TelegramAPI): TelegramObject ?}
+
 trait TelegramMethod
     fun method(): String => "GET"
-
+    fun expect(): TelegramObjectifier
 
 //trait PossiblyUnavailableChatMethod
 type PossiblyUnavailableChatMethod is
@@ -43,8 +45,22 @@ type PossiblyUnavailableChatMethod is
 
 type ChatIdentifier is (I64 | String)
 
+// getUpdates -> Updates
+class GetUpdates is TelegramMethod
+    var offset: Optional[I64] = None
+    var limit: Optional[I64] = None
+    var timeout: Optional[I64] = None
+    var allowed_updates: Optional[Array[String]] = None
+
+// TODO:
+// setWebhook
+// deleteWebhook
+// getWebhook
+
 // getMe -> User
 class GetMe is TelegramMethod
+    fun expect(): TelegramObjectifier =>
+        {(json: JsonObject, api: TelegramAPI): User ? => User(json, api)}
 
 // sendMessage -> Message
 class SendMessage is TelegramMethod
@@ -72,6 +88,8 @@ class SendPhoto is TelegramMethod
     var reply_to_message_id: Optional[I64] = None
     var reply_markup: Optional[ReplyMarkup] = None
 
+    fun method(): String => "POST"
+
 // sendAudio -> Message
 class SendAudio is TelegramMethod
     var chat_id: ChatIdentifier
@@ -84,6 +102,8 @@ class SendAudio is TelegramMethod
     var reply_to_message_id: Optional[I64] = None
     var reply_markup: Optional[ReplyMarkup] = None
 
+    fun method(): String => "POST"
+
 // sendDocument -> Message
 class SendDocument is TelegramMethod
     var chat_id: ChatIdentifier
@@ -92,6 +112,8 @@ class SendDocument is TelegramMethod
     var disable_notification: Optional[Bool] = None
     var reply_to_message_id: Optional[I64] = None
     var reply_markup: Optional[ReplyMarkup] = None
+    
+    fun method(): String => "POST"
 
 // sendSticker -> Message
 class SendSticker is TelegramMethod
@@ -101,6 +123,8 @@ class SendSticker is TelegramMethod
     var disable_notification: Optional[Bool] = None
     var reply_to_message_id: Optional[I64] = None
     var reply_markup: Optional[ReplyMarkup] = None
+
+    fun method(): String => "POST"
 
 // sendVideo -> Message
 class SendVideo is TelegramMethod
@@ -114,6 +138,8 @@ class SendVideo is TelegramMethod
     var reply_to_message_id: Optional[I64] = None
     var reply_markup: Optional[ReplyMarkup] = None
 
+    fun method(): String => "POST"
+
 // sendVoice -> Message
 class SendVoice is TelegramMethod
     var chat_id: ChatIdentifier
@@ -123,6 +149,8 @@ class SendVoice is TelegramMethod
     var disable_notification: Optional[Bool] = None
     var reply_to_message_id: Optional[I64] = None
     var reply_markup: Optional[ReplyMarkup] = None
+
+    fun method(): String => "POST"
 
 // sendLocation -> Message
 class SendLocation is TelegramMethod

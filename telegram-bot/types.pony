@@ -34,9 +34,12 @@ type ParseModeType is (Markdown | HTML)
 ... primitives
 */
 
-type Updates is Array[Update]
+trait APIUser
+trait TelegramObject
 
-class Update
+type Updates is (Array[Update] & TelegramObject)
+
+class Update is TelegramObject
     var update_id: I64
     var message: Optional[Message] = None
     var edited_message: Optional[Message] = None
@@ -56,7 +59,7 @@ class Update
         chosen_inline_result = try ChosenInlineResult(json.data("chosen_inline_result") as JsonObject) end
         callback_query = try CallbackQuery(json.data("callback_query") as JsonObject) end
 
-class WebhookInfo
+class WebhookInfo is TelegramObject
     var url: String
     var has_custom_certificate: Bool
     var pending_update_count: I64
@@ -66,19 +69,22 @@ class WebhookInfo
     var allowed_updates: Optional[Array[String]] = None
 
 
-class User
+class User is (TelegramObject & APIUser)
+    var _api: TelegramAPI
     var id: I64
     var first_name: String
     var last_name: Optional[String] = None
     var username: Optional[String] = None
 
-    new create(json: JsonObject) ? =>
+    new create(json: JsonObject, api: TelegramAPI) ? =>
+        _api = api
         id = json.data("id") as I64
         first_name = json.data("first_name") as String
         last_name = try json.data("last_name") as String end
         username = try json.data("username") as String end
 
-class Chat
+class Chat is (TelegramObject & APIUser)
+    var _api: TelegramAPI
     var id: I64
     var type': String // ChatType
     var title: Optional[String] = None
@@ -87,7 +93,8 @@ class Chat
     var last_name: Optional[String] = None
     var all_members_are_administrators: Optional[Bool] = None
 
-    new create(json: JsonObject) ? =>
+    new create(json: JsonObject, api: TelegramAPI) ? =>
+        _api = api
         id = json.data("id") as I64
         type' = json.data("type") as String
         title = try json.data("title") as String end
@@ -96,7 +103,8 @@ class Chat
         last_name = try json.data("last_name") as String end
         all_members_are_administrators = try json.data("all_members_are_administrators") as Bool end
 
-class Message
+class Message is (TelegramObject & APIUser)
+    var _api: TelegramAPI
     var message_id: I64
     var from: Optional[User] = None
     var date: Date
@@ -132,7 +140,8 @@ class Message
     var migrate_from_chat_id: Optional[I64] = None
     var pinned_message: Optional[Message] = None
 
-    new create(json: JsonObject) ? =>
+    new create(json: JsonObject, api: TelegramAPI) ? =>
+        _api = api
         message_id = json.data("message_id") as I64
         from = try User(json.data("from") as JsonObject) end
         date = Date(json.data("date") as I64)
@@ -186,33 +195,38 @@ class Message
         migrate_from_chat_id = try json.data("migrate_from_chat_id") as I64 end
         pinned_message = try Message(json.data("pinned_message") as JsonObject) end
 
-class MessageEntity
+class MessageEntity is TelegramObject //is APIUser
+    //var _api: TelegramAPI
     var type': String // MessageEntityType
     var offset: I64
     var length: I64
     var url: Optional[String] = None
     var user: Optional[User] = None
 
-    new create(json: JsonObject) ? =>
+    new create(json: JsonObject) ? => // , api: TelegramAPI) ? =>
+        // _api = api
         type' = json.data("type") as String
         offset = json.data("offset") as I64
         length = json.data("length") as I64
         url = try json.data("url") as String end
         user = try User(json.data("user") as JsonObject) end
 
-class PhotoSize
+class PhotoSize is (TelegramObject & APIUser)
+    var _api: TelegramAPI
     var file_id: String
     var width: I64
     var height: I64
     var file_size: Optional[I64] = None
 
-    new create(json: JsonObject) ? =>
+    new create(json: JsonObject, api: TelegramAPI) ? =>
+        _api = api
         file_id = json.data("file_id") as String
         width = json.data("width") as I64
         height = json.data("height") as I64
         file_size = try json.data("file_size") as I64 end
 
-class Audio
+class Audio is (TelegramObject & APIUser)
+    var _api: TelegramAPI
     var file_id: String
     var duration: I64
     var performer: Optional[String] = None
@@ -220,7 +234,8 @@ class Audio
     var mime_type: Optional[String] = None
     var file_size: Optional[I64] = None
 
-    new create(json: JsonObject) ? =>
+    new create(json: JsonObject, api: TelegramAPI) ? =>
+        _api = api
         file_id = json.data("file_id") as String
         duration = json.data("duration") as I64
         performer = try json.data("performer") as String end
@@ -228,21 +243,24 @@ class Audio
         mime_type = try json.data("mime_type") as String end
         file_size = try json.data("file_size") as I64 end
 
-class Document
+class Document is (TelegramObject & APIUser)
+    var _api: TelegramAPI
     var file_id: String
     var thumb: Optional[PhotoSize] = None
     var file_name: Optional[String] = None
     var mime_type: Optional[String] = None
     var file_size: Optional[I64] = None
 
-    new create(json: JsonObject) ? =>
+    new create(json: JsonObject, api: TelegramAPI) ? =>
+        _api = api
         file_id = json.data("file_id") as String
         thumb = try PhotoSize(json.data("thumb") as JsonObject) end
         file_name = try json.data("file_name") as String end
         mime_type = try json.data("mime_type") as String end
         file_size = try json.data("file_size") as I64 end
 
-class Sticker
+class Sticker is (TelegramObject & APIUser)
+    var _api: TelegramAPI
     var file_id: String
     var width: I64
     var height: I64
@@ -250,7 +268,8 @@ class Sticker
     var emoji: Optional[String] = None
     var file_size: Optional[I64] = None
 
-    new create(json: JsonObject) ? =>
+    new create(json: JsonObject, api: TelegramAPI) ? =>
+        _api = api
         file_id = json.data("file_id") as String
         width = json.data("width") as I64
         height = json.data("height") as I64
@@ -258,7 +277,8 @@ class Sticker
         emoji = try json.data("emoji") as String end
         file_size = try json.data("file_size") as I64 end
 
-class Video
+class Video is (TelegramObject & APIUser)
+    var _api: TelegramAPI
     var file_id: String
     var width: I64
     var height: I64
@@ -267,7 +287,8 @@ class Video
     var mime_type: Optional[String] = None
     var file_size: Optional[I64] = None
 
-    new create(json: JsonObject) ? =>
+    new create(json: JsonObject, api: TelegramAPI) ? =>
+        _api = api
         file_id = json.data("file_id") as String
         width = json.data("width") as I64
         height = json.data("height") as I64
@@ -276,19 +297,21 @@ class Video
         mime_type = try json.data("mime_type") as String end
         file_size = try json.data("file_size") as I64 end
 
-class Voice
+class Voice is (TelegramObject & APIUser)
+    var _api: TelegramAPI
     var file_id: String
     var duration: I64
     var mime_type: Optional[String] = None
     var file_size: Optional[I64] = None
 
-    new create(json: JsonObject) ? =>
+    new create(json: JsonObject, api: TelegramAPI) ? =>
+        _api = api
         file_id = json.data("file_id") as String
         duration = json.data("duration") as I64
         mime_type = try json.data("mime_type") as String end
         file_size = try json.data("file_size") as I64 end
 
-class Contact
+class Contact is TelegramObject
     var phone_number: String
     var first_name: String
     var last_name: Optional[String] = None
@@ -300,7 +323,7 @@ class Contact
         last_name = try json.data("last_name") as String end
         user_id = try json.data("user_id") as I64 end
 
-class Location
+class Location is TelegramObject
     var longitude: F64
     var latitude: F64
 
@@ -308,7 +331,7 @@ class Location
         longitude = json.data("longitude") as F64
         latitude = json.data("latitude") as F64
 
-class Venue
+class Venue is TelegramObject
     var location: Location
     var title: String
     var address: String
@@ -320,7 +343,7 @@ class Venue
         address = json.data("address") as String
         foursquare_id = try json.data("foursquare_id") as String end
 
-class UserProfilePhotos
+class UserProfilePhotos is TelegramObject
     var total_count: I64
     var photos: Array[Array[PhotoSize]]
 
@@ -340,7 +363,7 @@ class UserProfilePhotos
         end
         photos'
 
-class File
+class File is TelegramObject
     var file_id: String
     var file_size: Optional[I64] = None
     var file_path: Optional[String] = None
@@ -350,7 +373,7 @@ class File
         file_size = try json.data("file_size") as I64 end
         file_path = try json.data("file_path") as String end
 
-class ReplyKeyboardMarkup
+class ReplyKeyboardMarkup is TelegramObject
     var keyboard: Array[Array[KeyboardButton]]
     var resize_keyboard: Optional[Bool] = None
     var one_time_keyboard: Optional[Bool] = None
@@ -374,7 +397,7 @@ class ReplyKeyboardMarkup
         end
         keyboard'
 
-class KeyboardButton
+class KeyboardButton is TelegramObject
     var text: String
     var request_contact: Optional[Bool] = None
     var request_location: Optional[Bool] = None
@@ -384,7 +407,7 @@ class KeyboardButton
         request_contact = try json.data("request_contact") as Bool end
         request_location = try json.data("request_location") as Bool end
 
-class ReplyKeyboardRemove
+class ReplyKeyboardRemove is TelegramObject
     var remove_keyboard: Bool
     var selective: Optional[Bool] = None
 
@@ -392,7 +415,7 @@ class ReplyKeyboardRemove
         remove_keyboard = json.data("remove_keyboard") as Bool
         selective = try json.data("selective") as Bool end
 
-class InlineKeyboardMarkup
+class InlineKeyboardMarkup is TelegramObject
     var inline_keyboard: Array[Array[InlineKeyboardButton]]
 
     new create(json: JsonObject) ? =>
@@ -410,7 +433,7 @@ class InlineKeyboardMarkup
         end
         keyboard'
 
-class InlineKeyboardButton
+class InlineKeyboardButton is TelegramObject
     var text: String
     var url: Optional[String] = None
     var callback_data: Optional[String] = None
@@ -426,7 +449,8 @@ class InlineKeyboardButton
         switch_inline_query_current_chat = try json.data("switch_inline_query_current_chat") as String end
         callback_game = try CallbackGame(json.data("callback_game") as JsonObject) end
 
-class CallbackQuery
+class CallbackQuery is (TelegramObject & APIUser)
+    var _api: TelegramAPI
     var id: String
     var from: User
     var message: Optional[Message] = None
@@ -435,7 +459,8 @@ class CallbackQuery
     var data: Optional[String] = None
     var game_short_name: Optional[String] = None
 
-    new create(json: JsonObject) ? =>
+    new create(json: JsonObject, api: TelegramAPI) ? =>
+        _api = api
         id = json.data("id") as String
         from = User(json.data("from") as JsonObject)
         message = try Message(json.data("message") as JsonObject) end
@@ -444,7 +469,7 @@ class CallbackQuery
         data = try json.data("data") as String end
         game_short_name = try json.data("game_short_name") as String end
 
-class ForceReply
+class ForceReply is TelegramObject
     var force_reply: Bool
     var selective: Optional[Bool] = None
 
@@ -452,7 +477,7 @@ class ForceReply
         force_reply = json.data("force_reply") as Bool
         selective = try json.data("selective") as Bool end
 
-class ChatMember
+class ChatMember is TelegramObject
     var user: User
     var status: String
 
@@ -460,7 +485,7 @@ class ChatMember
         user = User(json.data("user") as JsonObject)
         status = json.data("status") as String
 
-class ResponseParameters
+class ResponseParameters is TelegramObject
     var migrate_to_chat_id: I64
     var retry_after: I64
 
@@ -470,14 +495,16 @@ class ResponseParameters
 
 // ? class InputFile
 
-class InlineQuery
+class InlineQuery is (TelegramObject & APIUser)
+    var _api: TelegramAPI
     var id: String
     var from: User
     var location: Optional[Location] = None
     var query: String
     var offset: String
 
-    new create(json: JsonObject) ? =>
+    new create(json: JsonObject, api: TelegramAPI) ? =>
+        _api = api
         id = json.data("id") as String
         from = User(json.data("from") as JsonObject)
         location = try Location(json.data("location") as JsonObject) end
@@ -507,7 +534,7 @@ type InlineQueryResult is
     | InlineQueryResultCachedStick
     )
 
-class InlineQueryResultArticle
+class InlineQueryResultArticle is TelegramObject
     var type': String
     var id: String
     var title: String
@@ -533,7 +560,7 @@ class InlineQueryResultArticle
         thumb_width = try json.data("thumb_width") as I64 end
         thumb_height = try json.data("thumb_height") as I64 end
 
-class InlineQueryResultPhoto
+class InlineQueryResultPhoto is TelegramObject
     var type': String
     var id: String
     var photo_url: String
@@ -560,7 +587,7 @@ class InlineQueryResultPhoto
         input_message_content = try json.data("input_message_content") as JsonObject end
 
 
-class InlineQueryResultGif
+class InlineQueryResultGif is TelegramObject
     var type': String
     var id: String
     var gif_url: String
@@ -584,7 +611,7 @@ class InlineQueryResultGif
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
         input_message_content = try json.data("input_message_content") as JsonObject end
 
-class InlineQueryResultMpeg4Gif
+class InlineQueryResultMpeg4Gif is TelegramObject
     var type': String
     var id: String
     var mpeg4_url: String
@@ -608,7 +635,7 @@ class InlineQueryResultMpeg4Gif
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
         input_message_content = try json.data("input_message_content") as JsonObject end
 
-class InlineQueryResultVideo
+class InlineQueryResultVideo is TelegramObject
     var type': String
     var id: String
     var video_url: String
@@ -638,7 +665,7 @@ class InlineQueryResultVideo
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
         input_message_content = try json.data("input_message_content") as JsonObject end
 
-class InlineQueryResultAudio
+class InlineQueryResultAudio is TelegramObject
     var type': String
     var id: String
     var audio_url: String
@@ -660,7 +687,7 @@ class InlineQueryResultAudio
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
         input_message_content = try json.data("input_message_content") as JsonObject end
 
-class InlineQueryResultVoice
+class InlineQueryResultVoice is TelegramObject
     var type': String
     var id: String
     var voice_url: String
@@ -680,7 +707,7 @@ class InlineQueryResultVoice
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
         input_message_content = try json.data("input_message_content") as JsonObject end
 
-class InlineQueryResultDocument
+class InlineQueryResultDocument is TelegramObject
     var type': String
     var id: String
     var title: String
@@ -708,7 +735,7 @@ class InlineQueryResultDocument
         thumb_width = try json.data("thumb_width") as I64 end
         thumb_height = try json.data("thumb_height") as I64 end
 
-class InlineQueryResultLocation
+class InlineQueryResultLocation is TelegramObject
     var type': String
     var id: String
     var latitude: F64
@@ -732,7 +759,7 @@ class InlineQueryResultLocation
         thumb_width = try json.data("thumb_width") as I64 end
         thumb_height = try json.data("thumb_height") as I64 end
 
-class InlineQueryResultVenue
+class InlineQueryResultVenue is TelegramObject
     var type': String
     var id: String
     var latitude: F64
@@ -760,7 +787,7 @@ class InlineQueryResultVenue
         thumb_width = try json.data("thumb_width") as I64 end
         thumb_height = try json.data("thumb_height") as I64 end
 
-class InlineQueryResultContact
+class InlineQueryResultContact is TelegramObject
     var type': String
     var id: String
     var phone_number: String
@@ -784,7 +811,7 @@ class InlineQueryResultContact
         thumb_width = try json.data("thumb_width") as I64 end
         thumb_height = try json.data("thumb_height") as I64 end
 
-class InlineQueryResultGame
+class InlineQueryResultGame is TelegramObject
     var type': String
     var id: String
     var game_short_name: String
@@ -796,7 +823,7 @@ class InlineQueryResultGame
         game_short_name = json.data("game_short_name") as String
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
 
-class InlineQueryResultCachedPhoto
+class InlineQueryResultCachedPhoto is TelegramObject
     var type': String
     var id: String
     var photo_file_id: String
@@ -816,7 +843,7 @@ class InlineQueryResultCachedPhoto
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
         input_message_content = try json.data("input_message_content") as JsonObject end
 
-class InlineQueryResultCachedGif
+class InlineQueryResultCachedGif is TelegramObject
     var type': String
     var id: String
     var gif_file_id: String
@@ -834,7 +861,7 @@ class InlineQueryResultCachedGif
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
         input_message_content = try json.data("input_message_content") as JsonObject end
 
-class InlineQueryResultCachedMpeg4Gif
+class InlineQueryResultCachedMpeg4Gif is TelegramObject
     var type': String
     var id: String
     var mpeg4_file_id: String
@@ -852,7 +879,7 @@ class InlineQueryResultCachedMpeg4Gif
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
         input_message_content = try json.data("input_message_content") as JsonObject end
 
-class InlineQueryResultCachedSticker
+class InlineQueryResultCachedSticker is TelegramObject
     var type': String
     var id: String
     var sticker_file_id: String
@@ -866,7 +893,7 @@ class InlineQueryResultCachedSticker
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
         input_message_content = try json.data("input_message_content") as JsonObject end
 
-class InlineQueryResultCachedDocument
+class InlineQueryResultCachedDocument is TelegramObject
     var type': String
     var id: String
     var title: String
@@ -886,7 +913,7 @@ class InlineQueryResultCachedDocument
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
         input_message_content = try json.data("input_message_content") as JsonObject end
 
-class InlineQueryResultCachedVideo
+class InlineQueryResultCachedVideo is TelegramObject
     var type': String
     var id: String
     var video_file_id: String
@@ -906,7 +933,7 @@ class InlineQueryResultCachedVideo
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
         input_message_content = try json.data("input_message_content") as JsonObject end
 
-class InlineQueryResultCachedVoice
+class InlineQueryResultCachedVoice is TelegramObject
     var type': String
     var id: String
     var voice_file_id: String
@@ -924,7 +951,7 @@ class InlineQueryResultCachedVoice
         reply_markup = try InlineKeyboardMarkup(json.data("reply_markup") as JsonObject) end
         input_message_content = try json.data("input_message_content") as JsonObject end
 
-class InlineQueryResultCachedAudio
+class InlineQueryResultCachedAudio is TelegramObject
     var type': String
     var id: String
     var audio_file_id: String
@@ -947,7 +974,7 @@ type InputMessageContent is
     | InputContactMessageContent
     )
 
-class InputTextMessageContent
+class InputTextMessageContent is TelegramObject
     var message_text: String
     var parse_mode: Optional[String] = None
     var disable_web_page_preview: Optional[Bool] = None
@@ -957,7 +984,7 @@ class InputTextMessageContent
         parse_mode = try json.data("parse_mode") as String end
         disable_web_page_preview = try json.data("disable_web_page_preview") as Bool end
 
-class InputLocationMessageContent
+class InputLocationMessageContent is TelegramObject
     var longitude: F64
     var latitude: F64
 
@@ -965,7 +992,7 @@ class InputLocationMessageContent
         longitude = json.data("longitude") as F64
         latitude = json.data("latitude") as F64
 
-class InputVenueMessageContent
+class InputVenueMessageContent is TelegramObject
     var longitude: F64
     var latitude: F64
     var title: String
@@ -979,7 +1006,7 @@ class InputVenueMessageContent
         address = json.data("address") as String
         foursquare_id = try json.data("foursquare_id") as String end
 
-class InputContactMessageContent
+class InputContactMessageContent is TelegramObject
     var phone_number: String
     var first_name: String
     var last_name: Optional[String] = None
@@ -989,21 +1016,24 @@ class InputContactMessageContent
         first_name = json.data("first_name") as String
         last_name = try json.data("last_name") as String end
 
-class ChosenInlineResult
+class ChosenInlineResult is (TelegramObject & APIUser)
+    var _api: TelegramAPI
     var result_id: String
     var from: User
     var location: Optional[Location] = None
     var inline_message_id: Optional[String] = None
     var query: String
 
-    new create(json: JsonObject) ? =>
+    new create(json: JsonObject, api: TelegramAPI) ? =>
+        _api = api
         result_id = json.data("result_id") as String
         from = User(json.data("from") as JsonObject)
         location = try Location(json.data("location") as JsonObject) end
         inline_message_id = try json.data("inline_message_id") as String end
         query = json.data("query") as String
 
-class Game
+class Game is (TelegramObject & APIUser)
+    var _api: TelegramAPI
     var title: String
     var description: String
     var photo: Array[PhotoSize]
@@ -1011,7 +1041,8 @@ class Game
     var text_entities: Optional[Array[MessageEntity]] = None
     var animation: Optional[Animation] = None
 
-    new create(json: JsonObject) ? =>
+    new create(json: JsonObject, api: TelegramAPI) ? =>
+        _api = api
         title = json.data("title") as String
         description = json.data("description") as String
         photo = _json_to_photo(json.data("photo") as JsonArray)
@@ -1031,7 +1062,7 @@ class Game
             .map[PhotoSize]({(j: JsonType): PhotoSize ? => PhotoSize(j as JsonObject)})
             .collect(Array[PhotoSize](count))
 
-class Animation
+class Animation is TelegramObject
     var file_id: String
     var thumb: Optional[PhotoSize] = None
     var file_name: Optional[String] = None
@@ -1046,11 +1077,11 @@ class Animation
         file_size = try json.data("file_size") as I64 end
 
 // Placeholder, holds no info yet
-class CallbackGame
+class CallbackGame is TelegramObject
     new create(json: JsonObject) =>
         """"""
 
-class GameHighScore
+class GameHighScore is TelegramObject
     var position: I64
     var user: User
     var score: I64
