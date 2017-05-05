@@ -1,8 +1,3 @@
-"""
-Telegram Bot API Types
-https://core.telegram.org/bots/api#available-types
-"""
-
 /*
 
 FIXME: Need to be able to construct apart from json. Add more constructors that
@@ -35,7 +30,11 @@ type ParseModeType is (Markdown | HTML)
 */
 
 trait APIUser
-trait TelegramObject
+trait iso TelegramObject
+    """
+    Telegram Bot API Types
+    https://core.telegram.org/bots/api#available-types
+    """
 
 type Updates is (Array[Update] & TelegramObject)
 
@@ -363,7 +362,7 @@ class UserProfilePhotos is TelegramObject
         end
         photos'
 
-class File is TelegramObject
+class TelegramFile is TelegramObject
     var file_id: String
     var file_size: Optional[I64] = None
     var file_path: Optional[String] = None
@@ -531,7 +530,7 @@ type InlineQueryResult is
     | InlineQueryResultVenue
     | InlineQueryResultContact
     | InlineQueryResultGame
-    | InlineQueryResultCachedStick
+    | InlineQueryResultCachedSticker
     )
 
 class InlineQueryResultArticle is TelegramObject

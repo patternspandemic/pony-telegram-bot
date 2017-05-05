@@ -1,7 +1,61 @@
-"""
-Telegram Bot API Methods
-https://core.telegram.org/bots/api#available-methods
-"""
+use "collections"
+use "json"
+use "promises"
+
+class TelegramMethod[R: Any #share]
+    """
+    Telegram Bot API Methods
+    https://core.telegram.org/bots/api#available-methods
+    """
+
+    let method: AvailableMethod
+    let params: Optional[Map[String val, JsonType ref]]
+    let request_method: String
+    let promise: Promise[R]
+
+    new create(method': AvailableMethod, params': Optional[Map[String val, JsonType ref]] = None, request_method': String = "GET") =>
+        method = method'
+        params = params'
+        request_method = request_method'
+        promise = Promise[R]
+
+    fun apply(api: TelegramAPI tag) =>
+        api(consume this)
+
+    fun ref next[T: Any #share](fulfiller: Fulfill[R, T],
+                            rejecter: Reject[T] = RejectAlways[T]
+                            ): Promise[T] =>
+        _promise.next[T](fulfiller, rejecter)
+    
+    fun string(): String => method.string()
+
+
+type AvailableMethod is
+    ( GetUpdates
+    | GetMe
+    | SendMessage
+    )
+
+
+trait PromiserOf[T]
+    fun apply(params: Optional[Map[String val, JsonType ref]] = None): TelegramMethod[T] =>
+        TelegramMethod[T](this, params, request_method())
+    
+    // Default request method for Telegram API method calls
+    fun request_method(): String => "GET"
+
+
+primitive GetUpdates
+    fun string(): String => "getUpdates"
+
+primitive GetMe is PromiserOf[User]
+    fun string(): String => "getMe"
+
+primitive SendMessage is PromiserOf[Message]
+    fun string(): String => "sendMessage"
+
+/*
+// BELOW IS OLD
 
 // TODO: Perhaps turn these methods into actors/behaviors.
 //   OR: Members of a primitive?
@@ -11,6 +65,9 @@ https://core.telegram.org/bots/api#available-methods
 type TelegramObjectifier is {(JsonObject, TelegramAPI): TelegramObject ?}
 
 trait TelegramMethod
+    fun apply(api: TelegramAPI, to: ) =>
+        api(this)
+
     fun method(): String => "GET"
     fun expect(): TelegramObjectifier
 
@@ -275,7 +332,7 @@ class AnswerInlineQuery is TelegramMethod
 // sendGame -> Message
 class SendGame is TelegramMethod
     var chat_id: ChatIdentifier
-    game_short_name
+    var game_short_name: String
     var disable_notification: Optional[Bool] = None
     var reply_to_message_id: Optional[I64] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
@@ -296,3 +353,4 @@ class GetGameHighScores is TelegramMethod
     var chat_id: Optional[I64] = None
     var message_id: Optional[I64] = None
     var inline_message_id: Optional[String] = None
+*/
