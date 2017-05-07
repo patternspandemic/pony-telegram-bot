@@ -10,6 +10,7 @@ use "time"
 use "itertools"
 //use "collections"
 
+// General purpose optional type
 type Optional[T] is (T | None)
 
 type ReplyMarkup is (InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply)
@@ -30,15 +31,16 @@ type ParseModeType is (Markdown | HTML)
 */
 
 trait APIUser
-trait iso TelegramObject
+trait val TelegramObject
     """
     Telegram Bot API Types
     https://core.telegram.org/bots/api#available-types
     """
+    // TODO: interface for data access, etc
 
 type Updates is (Array[Update] & TelegramObject)
 
-class Update is TelegramObject
+class val Update is TelegramObject
     var update_id: I64
     var message: Optional[Message] = None
     var edited_message: Optional[Message] = None
@@ -48,7 +50,7 @@ class Update is TelegramObject
     var chosen_inline_result: Optional[ChosenInlineResult] = None
     var callback_query: Optional[CallbackQuery] = None
 
-    new create(json: JsonObject) ? =>
+    new val create(json: JsonObject val) ? =>
         update_id = json.data("update_id") as I64
         message = try Message(json.data("message") as JsonObject) end
         edited_message = try Message(json.data("edited_message") as JsonObject) end
@@ -67,15 +69,30 @@ class WebhookInfo is TelegramObject
     var max_connections: Optional[I64] = None
     var allowed_updates: Optional[Array[String]] = None
 
+    new create(json: JsonObject) ? =>
+        url = json.data("url") as String
+        has_custom_certificate = json.data("has_custom_certificate") as Bool
+        pending_update_count = json.data("pending_update_count") as I64
+        last_error_date = try json.data("last_error_date") as I64 end
+        last_error_message = try json.data("last_error_message") as String end
+        max_connections = try json.data("max_connections") as I64 end
+        allowed_updates = try
+            var allowed_updates_jsonarray = json.data("allowed_updates") as JsonArray
+            let count = allowed_updates_jsonarray.data.size()
+            Iter[JsonType](allowed_updates_jsonarray.data.values())
+                .map[String]({(j: JsonType): String ? => j as String})
+                .collect(Array[String](count))
+        end
 
-class User is (TelegramObject & APIUser)
+
+class val User is (TelegramObject & APIUser)
     var _api: TelegramAPI
     var id: I64
     var first_name: String
     var last_name: Optional[String] = None
     var username: Optional[String] = None
 
-    new create(json: JsonObject, api: TelegramAPI) ? =>
+    new val create(json: JsonObject val, api: TelegramAPI) ? =>
         _api = api
         id = json.data("id") as I64
         first_name = json.data("first_name") as String
@@ -102,7 +119,7 @@ class Chat is (TelegramObject & APIUser)
         last_name = try json.data("last_name") as String end
         all_members_are_administrators = try json.data("all_members_are_administrators") as Bool end
 
-class Message is (TelegramObject & APIUser)
+class val Message is (TelegramObject & APIUser)
     var _api: TelegramAPI
     var message_id: I64
     var from: Optional[User] = None
@@ -139,7 +156,7 @@ class Message is (TelegramObject & APIUser)
     var migrate_from_chat_id: Optional[I64] = None
     var pinned_message: Optional[Message] = None
 
-    new create(json: JsonObject, api: TelegramAPI) ? =>
+    new val create(json: JsonObject val, api: TelegramAPI) ? =>
         _api = api
         message_id = json.data("message_id") as I64
         from = try User(json.data("from") as JsonObject) end

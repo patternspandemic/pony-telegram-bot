@@ -2,57 +2,87 @@ use "collections"
 use "json"
 use "promises"
 
-class TelegramMethod[R: Any #share]
-    """
-    Telegram Bot API Methods
-    https://core.telegram.org/bots/api#available-methods
-    """
-
-    let method: AvailableMethod
-    let params: Optional[Map[String val, JsonType ref]]
-    let request_method: String
-    let promise: Promise[R]
-
-    new create(method': AvailableMethod, params': Optional[Map[String val, JsonType ref]] = None, request_method': String = "GET") =>
-        method = method'
-        params = params'
-        request_method = request_method'
-        promise = Promise[R]
-
-    fun apply(api: TelegramAPI tag) =>
-        api(consume this)
-
-    fun ref next[T: Any #share](fulfiller: Fulfill[R, T],
-                            rejecter: Reject[T] = RejectAlways[T]
-                            ): Promise[T] =>
-        _promise.next[T](fulfiller, rejecter)
-    
-    fun string(): String => method.string()
-
-
-type AvailableMethod is
-    ( GetUpdates
-    | GetMe
-    | SendMessage
-    )
-
-
-trait PromiserOf[T]
-    fun apply(params: Optional[Map[String val, JsonType ref]] = None): TelegramMethod[T] =>
-        TelegramMethod[T](this, params, request_method())
+trait tag PromiserOf[T: TelegramObject #share]
+    fun apply(params: Optional[Map[String val, JsonType ref] iso] = None, request_method': Optional[String] = None): _TelegramMethod[T]^ =>
+        let req_method: String = try
+            request_method' as String
+        else
+            // Use default request method for this telegram method
+            request_method()
+        end
+        _TelegramMethod[T](this, req_method, consume params)
     
     // Default request method for Telegram API method calls
     fun request_method(): String => "GET"
 
+    fun tag self(): TelegramMethod
+    fun tag string(): String
 
-primitive GetUpdates
-    fun string(): String => "getUpdates"
+type TelegramMethod is
+    ( GetUpdates
+    | GetMe 
+    | SendMessage
+    //| ...
+    )
+
+primitive GetUpdates is PromiserOf[Updates]
+    fun tag self(): TelegramMethod => this
+    fun tag string(): String => "getUpdates"
 
 primitive GetMe is PromiserOf[User]
-    fun string(): String => "getMe"
+    fun tag self(): TelegramMethod => this
+    fun tag string(): String => "getMe"
 
 primitive SendMessage is PromiserOf[Message]
-    fun string(): String => "sendMessage"
+    fun tag self(): TelegramMethod => this
+    fun tag string(): String => "sendMessage"
+
+
+
+trait GeneralTelegramMethod
+    fun telegram_method(): TelegramMethod
+    fun request_method(): String
+    fun params(): Optional[Map[String val, JsonType ref] val]// iso]
+    fun name(): String
+    fun fulfill(f: {(): TelegramObject} iso)
+    fun reject()
+
+class iso _TelegramMethod[R: TelegramObject #share] is GeneralTelegramMethod
+    let _telegram_method: PromiserOf[R]
+    let _request_method: String
+    let _params: Optional[Map[String val, JsonType ref] val] // iso] // ?
+    let _promise: Promise[R]
+
+    new iso create(telegram_method': PromiserOf[R], request_method': String, params': Optional[Map[String val, JsonType ref] iso] = None) =>
+        _telegram_method = telegram_method'
+        _request_method = request_method'
+        _params = recover val consume params' end //consume params'
+        _promise = Promise[R]
+
+    fun ref next[T: Any #share](fulfiller: Fulfill[R, T],
+                                rejecter: Reject[T] = RejectAlways[T]): Promise[T] =>
+        _promise.next[T](consume fulfiller, consume rejecter)
+    
+    fun fulfill(f: {(): TelegramObject} iso) =>
+        try
+            let r = f() as R
+            _promise(r)
+        end
+
+    fun reject() =>
+        _promise.reject()
+
+    fun telegram_method(): TelegramMethod =>
+        _telegram_method.self()
+
+    fun request_method(): String =>
+        _request_method
+
+    fun params(): Optional[Map[String val, JsonType ref] val] => // iso]
+        _params
+
+    fun name(): String =>
+        _telegram_method.string()
 
 /*
 // BELOW IS OLD

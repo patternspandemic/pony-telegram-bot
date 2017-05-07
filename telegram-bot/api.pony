@@ -3,23 +3,17 @@ Caller for the Telegram Bot API
 https://core.telegram.org/bots/api
 """
 
-// TODO: Sub env.out.prints with a logger
-
 use "net/http"
 use lgr = "logger"
 use "collections"
 use "net/ssl"
 use "files"
 
-//class val TelegramAPI
 actor TelegramAPI
     """
     Lowest level interation with the Telegram API.
     """
-    //let _env: Env
     let _logger: lgr.Logger[String] // lgr.StringLogger
-    //let _api_key: String
-    //let _endpoint: String
     let _client: HTTPClient
     let _url_base: URL
 
@@ -28,42 +22,7 @@ actor TelegramAPI
         _url_base = url_base'
         _client = consume client'
 
-/*
-    new create_old(env: Env, api_key': String, endpoint': (String | None) = None) ? =>
-        _env = env
-        _api_key = api_key'
-        _endpoint = try endpoint' as String
-                    else "https://api.telegram.org/" end
-
-        // Construct method call URL.
-        let url': String = _endpoint + "bot" + _api_key + "/"
-        _url_base = try
-            URL.valid(url')
-        else 
-            env.out.print("Invalid API endpoint: " + url')
-            error
-        end
-
-        // Get certificate for HTTPS links.
-        let sslctx = try
-            recover
-                SSLContext
-                    .>set_client_verify(true)
-                    .>set_authority(FilePath(env.root as AmbientAuth, "cacert.pem"))
-            end
-        end
-
-        _client = try
-            // A client to handle our calls to the API.
-            HTTPClient(env.root as AmbientAuth, consume sslctx)
-        else
-            env.out.print("unable to use network")
-            error
-        end
-*/
-
-    fun apply(method: TelegramMethod[TelegramObject] iso) =>
-        //_TelegramAPICall(_env, this, _client, _url, consume method)
+    be apply(method: GeneralTelegramMethod iso) =>
         _TelegramAPICall(_logger, this, _url_base, consume method)
 
     be call_client(request: Payload iso, handle_maker: HandlerFactory val) =>
@@ -79,18 +38,11 @@ actor _TelegramAPICall
     """
     Do the work of one call to the Telegram API
     """
-    //let _env: Env
     let _logger: lgr.Logger[String] //StringLogger
     let _api: TelegramAPI tag
-    let _method: TelegramMethod[TelegramObject] iso
+    let _method: GeneralTelegramMethod iso
 
-    //new create(env: Env, api: TelegramAPI tag, client: HTTPClient tag, url: URL, method: TelegramMethod[TelegramObject] iso) =>
-    new create(logger: lgr.Logger[String], api: TelegramAPI tag, url_base: URL, method: TelegramMethod[TelegramObject] iso) =>
-        //_env = env
-        _logger = logger
-        _api = api
-        _method = consume method
-
+    new create(logger: lgr.Logger[String], api: TelegramAPI tag, url_base: URL, method: GeneralTelegramMethod iso) =>
         // An object that will produce response handlers to a request as needed.
         let handle_maker = recover val APIResponseNotifyFactory.create(this) end
 
@@ -100,21 +52,25 @@ actor _TelegramAPICall
         //   - yada
 
         let request_url: URL = try
-            URL.valid(url_base.string() + _method.string())
+            URL.valid(url_base.string() + method.name())
         else
-            _logger(lgr.Error) and _logger.log("Invalid URL after appending _method.string()")
+            logger(lgr.Error) and logger.log("Invalid URL after appending _method.name()")
             url_base
         end
 
-        let request = Payload.request(_method.request_method, request_url)
+        let request = Payload.request(method.request_method(), request_url)
         request("User-Agent") = "Pony Telegram Bot"
         //request("Content-type") = ... // not needed with query string?
 
         // Make the call
         // let sent_request: Payload = client(consume request, handle_maker)
-        _api.call_client(consume request, handle_maker)
+        api.call_client(consume request, handle_maker)
 
         // Send body data via sent_request if it was a POST
+
+        _logger = logger
+        _api = api
+        _method = consume method
 
     be cancelled() =>
         _logger(lgr.Info) and _logger.log("-- response cancelled --")
