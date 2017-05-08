@@ -1,10 +1,3 @@
-/*
-
-FIXME: Need to be able to construct apart from json. Add more constructors that
-meet non-optional demands of objects.
-
-*/
-
 use "json"
 use "time"
 use "itertools"
@@ -13,33 +6,61 @@ use "itertools"
 // General purpose optional type
 type Optional[T] is (T | None)
 
-type ReplyMarkup is (InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply)
+primitive JsonHelper
+    fun optional_to_json(optional_json: Optional[JsonObject iso], fit: USize val = 6): JsonObject iso^ =>
+        let json_object: JsonObject iso = try 
+            recover iso consume optional_json as JsonObject end
+        else
+            /// No fields provided, construct prealloc'd to hold max fields without immediate resize
+            let will_resize_at: F32 = (4.0 * F32.from[USize](fit)) / 3.0
+            let prealloc: USize = USize.from[F32](1 + will_resize_at.ceil())
+            JsonObject.create(prealloc)
+        end
+        consume json_object
 
-/*
-type ChatType is (Private | Group | SuperGroup | Channel)
-... primitives
-*/
+// Telegram object field types, similar to JsonType
+type TelegramType is
+    ( F64 val
+    | I64 val
+    | Bool val
+    | None val
+    | String val
+    | Array[TelegramObject] ref
+    | TelegramObject ref
+    )
 
-/*
-type MessageEntityType is (Mention | Hashtag | BotCommand | Url | Email | Bold | Italic | Code | Pre | TextLink | TextMention)
-... primitives
-*/
-
-/*
-type ParseModeType is (Markdown | HTML)
-... primitives
-*/
-
-trait APIUser
 trait val TelegramObject
     """
     Telegram Bot API Types
     https://core.telegram.org/bots/api#available-types
     """
-    // TODO: interface for data access, etc
+    fun apply(field: String): TelegramType =>
+        // try to get field from json_data, or return None?
+        // _data...
+        None
+
+    fun ref update(field: String, value: TelegramType) =>
+        // try to update the json_data. Move TelegramObjects to JsonObjects?
+        //_data...
+        None
+
+    fun ref _data(): JsonObject
+
+
+// default create with empty JsonObject?
+// and then create_from_json, or update_with_json?
+
+trait APIUser
 
 type Updates is (Array[Update] & TelegramObject)
 
+class Update is TelegramObject
+    let _fields: JsonObject
+    new create(json: Optional[JsonObject iso] = None) =>
+        _fields = JsonHelper.optional_to_json(consume json, 8)
+
+    fun ref _data(): JsonObject => _fields
+/*
 class val Update is TelegramObject
     var update_id: I64
     var message: Optional[Message] = None
@@ -52,13 +73,14 @@ class val Update is TelegramObject
 
     new val create(json: JsonObject val) ? =>
         update_id = json.data("update_id") as I64
-        message = try Message(json.data("message") as JsonObject) end
+        message = try Message(json.data("message") as JsonObject val) end
         edited_message = try Message(json.data("edited_message") as JsonObject) end
         channel_post = try Message(json.data("channel_post") as JsonObject) end
         edited_channel_post = try Message(json.data("edited_channel_post") as JsonObject) end
         inline_query = try InlineQuery(json.data("inline_query") as JsonObject) end
         chosen_inline_result = try ChosenInlineResult(json.data("chosen_inline_result") as JsonObject) end
         callback_query = try CallbackQuery(json.data("callback_query") as JsonObject) end
+*/
 
 class WebhookInfo is TelegramObject
     var url: String
@@ -1106,3 +1128,21 @@ class GameHighScore is TelegramObject
         position = json.data("position") as I64
         user = User(json.data("user") as JsonObject)
         score = json.data("score") as I64
+
+
+type ReplyMarkup is (InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply)
+
+/*
+type ChatType is (Private | Group | SuperGroup | Channel)
+... primitives
+*/
+
+/*
+type MessageEntityType is (Mention | Hashtag | BotCommand | Url | Email | Bold | Italic | Code | Pre | TextLink | TextMention)
+... primitives
+*/
+
+/*
+type ParseModeType is (Markdown | HTML)
+... primitives
+*/
