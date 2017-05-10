@@ -113,8 +113,8 @@ actor _TelegramAPICall
 
     be finished() =>
         _logger(lgr.Info) and _logger.log("-- end of body --")
-        // Set the api on the object
-        // fullfill/Reject a promise?
+        // Create expected result (TelegramObject) of the promiser from the api & json in the response, from _method's expect objectifier
+        // fullfill/Reject the _method's promise depending on success of result's creation
         // Callback to TelegramMethod with finished response object?
 
 

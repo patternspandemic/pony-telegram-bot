@@ -61,7 +61,9 @@ actor Bot
         | let api'': TelegramAPI => 
             // Request the User representing this Bot
             let get_me = GetMe()
-            get_me.next[None]({(u: User)(bot = recover tag this end) => bot.set_self(u)} iso)
+            get_me.next[None]({(mr: TelegramAPIMethodResponse)(bot = recover tag this end) => 
+                bot.set_self(recover iso User(mr.api, mr.json_str_response) end)
+            } iso)
             api''(consume get_me)
         end
 
@@ -69,5 +71,5 @@ actor Bot
         _logger = logger'
         api = api'
 
-    be set_self(user: User) =>
-        self = user
+    be set_self(user: User iso) =>
+        self = consume user

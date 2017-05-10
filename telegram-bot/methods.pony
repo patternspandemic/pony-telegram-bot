@@ -2,6 +2,23 @@ use "collections"
 use "json"
 use "promises"
 
+trait tag PrimitiveMethod
+    fun apply(params: Optional[Map[String val, JsonType ref] iso] = None, request_method': Optional[String] = None): _TelegramMethod iso^ =>
+        let req_method: String = try
+            request_method' as String
+        else
+            // Use default request method for this telegram method
+            request_method()
+        end
+        _TelegramMethod(this, req_method, consume params)
+    
+    // Default request method for Telegram API method calls
+    fun request_method(): String => "GET"
+
+    fun tag self(): TelegramMethod
+    fun tag string(): String
+    fun tag objectifier(): TelegramObjectifier val^
+/*
 trait tag PromiserOf[T: TelegramObject #share]
     fun apply(params: Optional[Map[String val, JsonType ref] iso] = None, request_method': Optional[String] = None): _TelegramMethod[T]^ =>
         let req_method: String = try
@@ -17,6 +34,8 @@ trait tag PromiserOf[T: TelegramObject #share]
 
     fun tag self(): TelegramMethod
     fun tag string(): String
+    fun tag objectifier(): TelegramObjectifier
+*/
 
 type TelegramMethod is
     ( GetUpdates
@@ -25,18 +44,47 @@ type TelegramMethod is
     //| ...
     )
 
-primitive GetUpdates is PromiserOf[Updates]
+primitive GetUpdates is PrimitiveMethod // PromiserOf[Updates]
     fun tag self(): TelegramMethod => this
     fun tag string(): String => "getUpdates"
+    fun tag objectifier(): TelegramObjectifier val^ =>
+        {(message_response: TelegramAPIMethodResponse): TelegramObject iso^ =>
+            let to: Updates iso = recover iso Updates.create(message_response.api, message_response.json_str_response) end
+            consume to
+        }
 
-primitive GetMe is PromiserOf[User]
+primitive GetMe is PrimitiveMethod // PromiserOf[User]
     fun tag self(): TelegramMethod => this
     fun tag string(): String => "getMe"
+    fun tag objectifier(): TelegramObjectifier val^ =>
+        {(message_response: TelegramAPIMethodResponse): TelegramObject iso^ =>
+            let to: User iso = recover iso User.create(message_response.api, message_response.json_str_response) end
+            consume to
+        }
 
-primitive SendMessage is PromiserOf[Message]
+primitive SendMessage is PrimitiveMethod // PromiserOf[Message]
     fun tag self(): TelegramMethod => this
     fun tag string(): String => "sendMessage"
+    fun tag objectifier(): TelegramObjectifier val^ =>
+        {(message_response: TelegramAPIMethodResponse): TelegramObject iso^ =>
+            let to: Message iso = recover iso Message.create(message_response.api, message_response.json_str_response) end
+            consume to
+        }
 
+
+
+//type TelegramObjectifier is {((JsonObject ref | JsonArray ref), TelegramAPI tag): TelegramObject iso^ }
+//type TelegramObjectifier is {((JsonObject val | JsonArray val), TelegramAPI tag): TelegramObject val^ }
+type TelegramObjectifier is {(TelegramAPIMethodResponse): TelegramObject iso^ }
+
+//type TelegramAPIMethodResponse is (TelegramAPI tag, String)
+class val TelegramAPIMethodResponse
+    var api: TelegramAPI tag
+    var json_str_response: String val
+
+    new val create(api': TelegramAPI tag, json_str_response': String val) =>
+        api = api'
+        json_str_response = json_str_response'
 
 
 trait GeneralTelegramMethod
@@ -44,9 +92,47 @@ trait GeneralTelegramMethod
     fun request_method(): String
     fun params(): Optional[Map[String val, JsonType ref] val]// iso]
     fun name(): String
-    fun fulfill(f: {(): TelegramObject} iso)
+    fun fulfill(method_response: TelegramAPIMethodResponse val)
     fun reject()
+    fun expect(): TelegramObjectifier val^
 
+class iso _TelegramMethod is GeneralTelegramMethod
+    let _telegram_method: PrimitiveMethod
+    let _request_method: String
+    let _params: Optional[Map[String val, JsonType ref] val] // iso] // ?
+    let _promise: Promise[TelegramAPIMethodResponse]
+
+    new iso create(telegram_method': PrimitiveMethod, request_method': String, params': Optional[Map[String val, JsonType ref] iso] = None) =>
+        _telegram_method = telegram_method'
+        _request_method = request_method'
+        _params = recover val consume params' end //consume params'
+        _promise = Promise[TelegramAPIMethodResponse]
+
+    fun ref next[T: Any #share](fulfiller: Fulfill[TelegramAPIMethodResponse, T],
+                                rejecter: Reject[T] = RejectAlways[T]): Promise[T] =>
+        _promise.next[T](consume fulfiller, consume rejecter)
+    
+    fun fulfill(method_response: TelegramAPIMethodResponse val) =>
+        _promise(method_response)
+
+    fun reject() =>
+        _promise.reject()
+
+    fun expect(): TelegramObjectifier val^ =>
+        _telegram_method.objectifier()
+
+    fun telegram_method(): TelegramMethod =>
+        _telegram_method.self()
+
+    fun request_method(): String =>
+        _request_method
+
+    fun params(): Optional[Map[String val, JsonType ref] val] => // iso]
+        _params
+
+    fun name(): String =>
+        _telegram_method.string()
+/*
 class iso _TelegramMethod[R: TelegramObject #share] is GeneralTelegramMethod
     let _telegram_method: PromiserOf[R]
     let _request_method: String
@@ -72,6 +158,9 @@ class iso _TelegramMethod[R: TelegramObject #share] is GeneralTelegramMethod
     fun reject() =>
         _promise.reject()
 
+    fun expect(): TelegramObjectifier =>
+        _telegram_method.objectifier()
+
     fun telegram_method(): TelegramMethod =>
         _telegram_method.self()
 
@@ -83,6 +172,7 @@ class iso _TelegramMethod[R: TelegramObject #share] is GeneralTelegramMethod
 
     fun name(): String =>
         _telegram_method.string()
+*/
 
 /*
 // BELOW IS OLD
@@ -92,7 +182,7 @@ class iso _TelegramMethod[R: TelegramObject #share] is GeneralTelegramMethod
 //   OR: Object literals closing over param data
 //   OR: Some combo?
 
-type TelegramObjectifier is {(JsonObject, TelegramAPI): TelegramObject ?}
+type TelegramObjectifier is {(JsonObject, TelegramAPI): TelegramObject iso^ ?}
 
 trait TelegramMethod
     fun apply(api: TelegramAPI, to: ) =>
