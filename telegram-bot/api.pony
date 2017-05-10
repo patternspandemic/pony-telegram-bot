@@ -25,13 +25,21 @@ actor TelegramAPI
     be apply(method: GeneralTelegramMethod iso) =>
         _TelegramAPICall(_logger, this, _url_base, consume method)
 
-    be call_client(request: Payload iso, handle_maker: HandlerFactory val) =>
+    be call_client(caller: _TelegramAPICall, request: Payload iso, handle_maker: HandlerFactory val) =>
         if request.url is _url_base then
             _logger(lgr.Error) and _logger.log("Bad _method.string() name")
             return
         end
 
-        _client(consume request, handle_maker)
+        try
+            var payload_val: Payload val = _client(consume request, handle_maker)
+            caller.with_sent_payload(payload_val) // Get payload_val back to caller
+        else
+            _logger(lgr.Error) and _logger.log("Call to API client failed.")
+        end
+
+    be client_send_body(data: (String val | Array[U8 val] val), session: HTTPSession tag) =>
+        _client.send_body(data, session)
 
 
 actor _TelegramAPICall
@@ -64,13 +72,17 @@ actor _TelegramAPICall
 
         // Make the call
         // let sent_request: Payload = client(consume request, handle_maker)
-        api.call_client(consume request, handle_maker)
-
-        // Send body data via sent_request if it was a POST
+        api.call_client(this, consume request, handle_maker)
 
         _logger = logger
         _api = api
         _method = consume method
+
+    be with_sent_payload(payload: Payload val) =>
+        // TODO:
+        // If transfer_mode is Stream or Chunked (either marked on payload or this _TelegramAPICall),
+        // Send body data via session returned in payload, i.e. for POST requests.
+        None
 
     be cancelled() =>
         _logger(lgr.Info) and _logger.log("-- response cancelled --")
@@ -113,7 +125,8 @@ actor _TelegramAPICall
 
     be finished() =>
         _logger(lgr.Info) and _logger.log("-- end of body --")
-        // Create expected result (TelegramObject) of the promiser from the api & json in the response, from _method's expect objectifier
+        // Create expected result (json string) of the promiser from the api & json in the response, from _method's expect objectifier?
+        // perhaps verify json is parsable?
         // fullfill/Reject the _method's promise depending on success of result's creation
         // Callback to TelegramMethod with finished response object?
 

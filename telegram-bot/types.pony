@@ -10,19 +10,30 @@ type JsonObjectData is HashMap[String val, (F64 val | I64 val | Bool val | None 
 
 // A Helper for dealing with the underlying JsonObject help by TelegramObjects
 primitive JsonHelper
-    fun optional_json_str_to_json_obj(optional_json_str: Optional[String], prealloc: USize val = 6): JsonObject => //ref^ =>
+    fun optional_json_str_to_json_obj(optional_json_str: Optional[String], prealloc: USize val = 6): JsonObject =>
         let json_object: JsonObject ref = try 
             let str: String = optional_json_str as String
-            let doc: JsonDoc iso = JsonDoc.create()
+            let doc: JsonDoc ref = JsonDoc.create()
             doc.parse(str)
-            doc.data as JsonObject
+            match doc.data
+            | let d: JsonObject => d
+            else
+                // TODO: Warn via api be that couldn't parse JsonObject in json_str' ?
+                error
+            end
         else
             JsonObject.create(prealloc)
         end
         json_object
 
+    fun json_obj_to_str(json_obj: JsonObject): String =>
+        json_obj.string()
+
 // The type of unknown field in TelegramObject
 primitive UnknownField
+
+// The type of field in TelegramObject with unexplected type
+primitive WrongOrChangedField
 
 // The type of un-implemented functionality
 primitive NotImplemented
@@ -34,12 +45,15 @@ type TelegramType is
     | Bool val
     | None val
     | String val
-    //| Array[TelegramObject] ref
     | TelegramObject ref
+    //| TelegramObjectArray
     | UnknownField
+    | WrongOrChangedField
     | NotImplemented
     )
 
+// TODO: Add trait val TelegramObjectArray and add to TelegramType
+// as analog to JsonArray (Updates and other arrayed responses would be of this type)
 
 trait val TelegramObject
     """
@@ -55,7 +69,7 @@ trait val TelegramObject
         else
             // error if the field was required
             if _required_fields().contains(field) then
-                error
+                error // TODO: Rethink erroring here, perhaps return MissingRequiredField?
             else
                 // otherwise it was optional, return None
                 return None
@@ -63,7 +77,7 @@ trait val TelegramObject
         end
 
         // Delegate to the concrete object for translating existing
-        // fields fields from JsonType to TelegramType.
+        // _fields fields from JsonType to TelegramType.
         _json_to_telegram_type(field, result)
 
     fun ref update(field: String, value: TelegramType): TelegramType =>
@@ -77,15 +91,17 @@ trait val TelegramObject
         | let x: String => x
         | None | UnknownField => None // Unknown fields returned by API calls are mapped to None
         | let x: TelegramObject ref => // The JsonObject or JsonArray representation of the TelegramObject
-            match x._json() as JsonType
-            | let y: JsonObject => y
-            | let y: JsonArray => y
+            try
+                match x._json() as JsonType
+                | let y: JsonObject => y
+                | let y: JsonArray => y
+                end
             end
-        // | let x: Array[TelegramObject] =>
+        // | let x: TelegramObjectArray =>
         //     // Map to JsonArray
         //     // TODO / FIXME: ...?
-        //     None
         | let x: NotImplemented => None // TODO: Maybe should be error ?
+        | let x: WrongOrChangedField => None  // TODO: Maybe should be error ?
         end
 
         // Update the field capturing old value
@@ -101,7 +117,7 @@ trait val TelegramObject
     fun _required_fields(): Array[String]
 
     // Concrete type delegation to turn a field's JsonType into the correct TelegramType
-    fun ref _json_to_telegram_type(field: String, jt: JsonType): TelegramType ?
+    fun ref _json_to_telegram_type(field: String, jt: JsonType): TelegramType
 
     // Underlying JsonObject of TelegramObject
     fun ref _json(): JsonType
@@ -110,20 +126,25 @@ trait val TelegramObject
 
 // Concrete Types ...
 
-//type Updates is (Array[Update] & TelegramObject)
 class Updates is TelegramObject
     var api: TelegramAPI tag
     var json: JsonArray
 
-    new create(api': TelegramAPI, json_str': String) ? =>
+    new create(api': TelegramAPI, json_str': String) =>
         api = api'
-        let doc: JsonDoc iso = JsonDoc.create()
-        doc.parse(json_str')
-        json = doc.data as JsonArray
+        let doc: JsonDoc ref = JsonDoc.create()
+        json = try 
+                   doc.parse(json_str')
+                   doc.data as JsonArray
+               else
+                   // TODO: Warn via api be that couldn't parse update array in json_str' ?
+                   // Shouldn't happen unless json_str' is corrupt
+                   JsonArray.create()
+               end
 
     // Provides its own impl because underlying json is JsonArray
     // Just to fulfill TelegramObject contract
-    fun ref apply(field: String): TelegramType ? =>
+    fun ref apply(field: String): TelegramType =>
         // FIXME: ? Calling apply not useful for this TelegramObject
         NotImplemented
 
@@ -141,62 +162,52 @@ class Updates is TelegramObject
     // Just to fulfill TelegramObject contract
     fun _required_fields(): Array[String] => Array[String].create() // No requirements, just a container really with context helpful methods
 
-    fun _json_to_telegram_type(field: String, jt: JsonType): TelegramType ? =>
-        error // should not be called on this type
+    fun _json_to_telegram_type(field: String, jt: JsonType): TelegramType =>
+        // FIXME: ? Calling _json_to_telegram_type not useful for this TelegramObject
+        NotImplemented
 
     fun ref _json(): JsonType => json
+
 
 class Update is TelegramObject
     var api: TelegramAPI tag
     var json: JsonObject
 
-    // new create(json': Optional[JsonObject iso] = None) =>
-    //     json = JsonHelper.optional_to_json(consume json', 8)
     new create(api': TelegramAPI, json_str': String) =>
         api = api'
-        let doc: JsonDoc iso = JsonDoc.create()
-        doc.parse(json_str')
-        json = doc.data as JsonObject
+        let doc: JsonDoc ref = JsonDoc.create()
+        json = try 
+                   doc.parse(json_str')
+                   doc.data as JsonObject
+               else
+                   // TODO: Warn via api be that couldn't parse update in json_str' ?
+                   // Shouldn't happen unless json_str' is corrupt
+                   JsonObject.create()
+               end
 
     fun ref _fields(): JsonObjectData => json.data
 
     fun _required_fields(): Array[String] => ["update_id"]
 
     fun _json_to_telegram_type(field: String, jt: JsonType): TelegramType =>
-        match field
-        | "update_id" => jt as I64
-        | "message" | "edited_message" | "channel_post" | "edited_channel_post" => Message(api, jt as JsonObject)
-        | "inline_query" => NotImplemented // InlineQuery(api, jt as JsonObject)
-        | "chosen_inline_result" => NotImplemented // ChosenInlineResult(api, jt as JsonObject)
-        | "callback_query" => NotImplemented // CallbackQuery(api, jt as JsonObject)
+        let json_str: String = try JsonHelper.json_obj_to_str(jt as JsonObject) else "" end
+        try
+            match field
+            | "update_id" => jt as I64
+            | "message" | "edited_message" | "channel_post" | "edited_channel_post" => Message(api, json_str)
+            | "inline_query" => NotImplemented // InlineQuery(api, json_str)
+            | "chosen_inline_result" => NotImplemented // ChosenInlineResult(api, json_str)
+            | "callback_query" => NotImplemented // CallbackQuery(api, json_str)
+            else
+                UnknownField
+            end
         else
-            // Don't know how to transform unknown field
-            UnknownField
+            WrongOrChangedField
         end
 
     fun ref _json(): JsonType => json
+
 /*
-class val Update is TelegramObject
-    var update_id: I64
-    var message: Optional[Message] = None
-    var edited_message: Optional[Message] = None
-    var channel_post: Optional[Message] = None
-    var edited_channel_post: Optional[Message] = None
-    var inline_query: Optional[InlineQuery] = None
-    var chosen_inline_result: Optional[ChosenInlineResult] = None
-    var callback_query: Optional[CallbackQuery] = None
-
-    new val create(json: JsonObject val) ? =>
-        update_id = json.data("update_id") as I64
-        message = try Message(json.data("message") as JsonObject val) end
-        edited_message = try Message(json.data("edited_message") as JsonObject) end
-        channel_post = try Message(json.data("channel_post") as JsonObject) end
-        edited_channel_post = try Message(json.data("edited_channel_post") as JsonObject) end
-        inline_query = try InlineQuery(json.data("inline_query") as JsonObject) end
-        chosen_inline_result = try ChosenInlineResult(json.data("chosen_inline_result") as JsonObject) end
-        callback_query = try CallbackQuery(json.data("callback_query") as JsonObject) end
-
-
 class WebhookInfo is TelegramObject
     var url: String
     var has_custom_certificate: Bool
@@ -235,30 +246,20 @@ class User is TelegramObject
     fun _required_fields(): Array[String] => ["id"; "first_name"]
 
     fun _json_to_telegram_type(field: String, jt: JsonType): TelegramType =>
-        match field
-        | "id" => jt as I64
-        | "first_name" | "last_name" | "username" => jt as String
+        try
+            match field
+            | "id" => jt as I64
+            | "first_name" | "last_name" | "username" => jt as String
+            else
+                UnknownField
+            end
         else
-            // Don't know how to transform unknown field
-            UnknownField
+            WrongOrChangedField
         end
 
     fun ref _json(): JsonType => json
+
 /*
-class val User is (TelegramObject & APIUser)
-    var _api: TelegramAPI
-    var id: I64
-    var first_name: String
-    var last_name: Optional[String] = None
-    var username: Optional[String] = None
-
-    new val create(json: JsonObject val, api: TelegramAPI) ? =>
-        _api = api
-        id = json.data("id") as I64
-        first_name = json.data("first_name") as String
-        last_name = try json.data("last_name") as String end
-        username = try json.data("username") as String end
-
 class Chat is (TelegramObject & APIUser)
     var _api: TelegramAPI
     var id: I64
@@ -293,123 +294,36 @@ class Message is TelegramObject
     fun _required_fields(): Array[String] => ["message_id"; "date"; "chat"]
 
     fun _json_to_telegram_type(field: String, jt: JsonType): TelegramType =>
-        match field
-        | "message_id" | "date" | "forward_from_message_id" | "forward_date" | "edit_date" | "migrate_to_chat_id" | "migrate_from_chat_id" => jt as I64
-        | "text" | "caption" | "new_chat_title" => jt as String
-        | "delete_chat_photo" | "group_chat_created" | "supergroup_chat_created" | "channel_chat_created" => jt as Bool
-        | "from" | "forward_from" | "new_chat_member" | "left_chat_member" => User(api, jt as JsonObject)
-        | "chat" | "forward_from_chat" => NotImplemented // Chat(api, jt as JsonObject)
-        | "reply_to_message" | "pinned_message" => Message(api, jt as JsonObject)
-        | "audio" => NotImplemented // Audio(api, jt as JsonObject)
-        | "document" => NotImplemented // Document(api, jt as JsonObject)
-        | "game" => NotImplemented // Game(api, jt as JsonObject)
-        | "sticker" => NotImplemented // Sticker(api, jt as JsonObject)
-        | "video" => NotImplemented // Video(api, jt as JsonObject)
-        | "voice" => NotImplemented // Voice(api, jt as JsonObject)
-        | "contact" => NotImplemented // Contact(api, jt as JsonObject)
-        | "location" => NotImplemented // Location(api, jt as JsonObject)
-        | "venue" => NotImplemented // Venue(api, jt as JsonObject)
-        | "entities" => None // FIXME: Array[MessageEntity]
-        | "photo" | "new_chat_photo" => None // FIXME: Array[PhotoSize]
+        let json_str: String = try JsonHelper.json_obj_to_str(jt as JsonObject) else "" end
+        try
+            match field
+            | "message_id" | "date" | "forward_from_message_id" | "forward_date" | "edit_date" | "migrate_to_chat_id" | "migrate_from_chat_id" => jt as I64
+            | "text" | "caption" | "new_chat_title" => jt as String
+            | "delete_chat_photo" | "group_chat_created" | "supergroup_chat_created" | "channel_chat_created" => jt as Bool
+            | "from" | "forward_from" | "new_chat_member" | "left_chat_member" => User(api, json_str)
+            | "chat" | "forward_from_chat" => NotImplemented // Chat(api, json_str)
+            | "reply_to_message" | "pinned_message" => Message(api, json_str)
+            | "audio" => NotImplemented // Audio(api, json_str)
+            | "document" => NotImplemented // Document(api, json_str)
+            | "game" => NotImplemented // Game(api, json_str)
+            | "sticker" => NotImplemented // Sticker(api, json_str)
+            | "video" => NotImplemented // Video(api, json_str)
+            | "voice" => NotImplemented // Voice(api, json_str)
+            | "contact" => NotImplemented // Contact(api, json_str)
+            | "location" => NotImplemented // Location(api, json_str)
+            | "venue" => NotImplemented // Venue(api, json_str)
+            | "entities" => None // FIXME: Array[MessageEntity]
+            | "photo" | "new_chat_photo" => None // FIXME: Array[PhotoSize]
+            else
+                UnknownField
+            end
         else
-            // Don't know how to transform unknown field
-            UnknownField
+            WrongOrChangedField
         end
 
     fun ref _json(): JsonType => json
+
 /*
-class val Message is (TelegramObject & APIUser)
-    var _api: TelegramAPI
-    var message_id: I64
-    var from: Optional[User] = None
-    var date: Date
-    var chat: Chat
-    var forward_from: Optional[User] = None
-    var forward_from_chat: Optional[Chat] = None
-    var forward_from_message_id: Optional[I64] = None
-    var forward_date: Optional[Date] = None
-    var reply_to_message: Optional[Message] = None
-    var edit_date: Optional[Date] = None
-    var text: Optional[String] = None
-    var entities: Optional[Array[MessageEntity]] = None
-    var audio: Optional[Audio] = None
-    var document: Optional[Document] = None
-    var game: Optional[Game] = None
-    var photo: Optional[Array[PhotoSize]] = None
-    var sticker: Optional[Sticker] = None
-    var video: Optional[Video] = None
-    var voice: Optional[Voice] = None
-    var caption: Optional[String] = None | ""
-    var contact: Optional[Contact] = None
-    var location: Optional[Location] = None
-    var venue: Optional[Venue] = None
-    var new_chat_member: Optional[User] = None
-    var left_chat_member: Optional[User] = None
-    var new_chat_title: Optional[String] = None
-    var new_chat_photo: Optional[Array[PhotoSize]] = None
-    var delete_chat_photo: Optional[Bool] = None
-    var group_chat_created: Optional[Bool] = None
-    var supergroup_chat_created: Optional[Bool] = None
-    var channel_chat_created: Optional[Bool] = None
-    var migrate_to_chat_id: Optional[I64] = None
-    var migrate_from_chat_id: Optional[I64] = None
-    var pinned_message: Optional[Message] = None
-
-    new val create(json: JsonObject val, api: TelegramAPI) ? =>
-        _api = api
-        message_id = json.data("message_id") as I64
-        from = try User(json.data("from") as JsonObject) end
-        date = Date(json.data("date") as I64)
-        chat = Chat(json.data("chat") as JsonObject)
-        forward_from = try User(json.data("forward_from") as JsonObject) end
-        forward_from_chat = try Chat(json.data("forward_from_chat") as JsonObject) end
-        forward_from_message_id = try json.data("forward_from_message_id") as I64 end
-        forward_date = try Date(json.data("forward_date") as I64) end
-        reply_to_message = try Message(json.data("reply_to_message") as JsonObject) end
-        edit_date = try Date(json.data("edit_date") as I64) end
-        text = try json.data("text") as String end
-        entities = try
-            var entities_jsonarray = json.data("entities") as JsonArray
-            let count = entities_jsonarray.data.size()
-            Iter[JsonType](entities_jsonarray.data.values())
-                .map[MessageEntity]({(j: JsonType): MessageEntity ? => MessageEntity(j as JsonObject)})
-                .collect(Array[MessageEntity](count))
-        end
-        audio = try Audio(json.data("audio") as JsonObject) end
-        document = try Document(json.data("document") as JsonObject) end
-        game = try Game(json.data("game") as JsonObject) end
-        photo = try
-            var photo_jsonarray = json.data("photo") as JsonArray
-            let count = photo_jsonarray.data.size()
-            Iter[JsonType](photo_jsonarray.data.values())
-                .map[PhotoSize]({(j: JsonType): PhotoSize ? => PhotoSize(j as JsonObject)})
-                .collect(Array[PhotoSize](count))
-        end
-        sticker = try Sticker(json.data("sticker") as JsonObject) end
-        video = try Video(json.data("video") as JsonObject) end
-        voice = try Voice(json.data("voice") as JsonObject) end
-        caption = try json.data("caption") as String end
-        contact = try Contact(json.data("contact") as JsonObject) end
-        location = try Location(json.data("location") as JsonObject) end
-        venue = try Venue(json.data("venue") as JsonObject) end
-        new_chat_member = try User(json.data("new_chat_member") as JsonObject) end
-        left_chat_member = try User(json.data("left_chat_member") as JsonObject) end
-        new_chat_title = try json.data("new_chat_title") as String end
-        new_chat_photo = try
-            var new_chat_photo_jsonarray = json.data("new_chat_photo") as JsonArray
-            let count = new_chat_photo_jsonarray.data.size()
-            Iter[JsonType](new_chat_photo_jsonarray.data.values())
-                .map[PhotoSize]({(j: JsonType): PhotoSize ? => PhotoSize(j as JsonObject)})
-                .collect(Array[PhotoSize](count))
-        end
-        delete_chat_photo = try json.data("delete_chat_photo") as Bool end
-        group_chat_created = try json.data("group_chat_created") as Bool end
-        supergroup_chat_created = try json.data("supergroup_chat_created") as Bool end
-        channel_chat_created = try json.data("channel_chat_created") as Bool end
-        migrate_to_chat_id = try json.data("migrate_to_chat_id") as I64 end
-        migrate_from_chat_id = try json.data("migrate_from_chat_id") as I64 end
-        pinned_message = try Message(json.data("pinned_message") as JsonObject) end
-
 class MessageEntity is TelegramObject //is APIUser
     //var _api: TelegramAPI
     var type': String // MessageEntityType
