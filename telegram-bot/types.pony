@@ -3,6 +3,8 @@ use "itertools"
 use "json"
 use "time"
 
+// TODO: Include bot tag in TelegramObjects?
+
 // General purpose optional type
 type Optional[T] is (T | None)
 
@@ -18,7 +20,7 @@ primitive JsonHelper
             match doc.data
             | let d: JsonObject => d
             else
-                // TODO: Warn via api be that couldn't parse JsonObject in json_str' ?
+                // TODO: Warn via api or bot that couldn't parse JsonObject in json_str' ?
                 error
             end
         else
@@ -137,7 +139,7 @@ class Updates is TelegramObject
                    doc.parse(json_str')
                    doc.data as JsonArray
                else
-                   // TODO: Warn via api be that couldn't parse update array in json_str' ?
+                   // TODO: Warn via api or bot that couldn't parse update array in json_str' ?
                    // Shouldn't happen unless json_str' is corrupt
                    JsonArray.create()
                end
@@ -180,7 +182,7 @@ class Update is TelegramObject
                    doc.parse(json_str')
                    doc.data as JsonObject
                else
-                   // TODO: Warn via api be that couldn't parse update in json_str' ?
+                   // TODO: Warn via api or bot that couldn't parse update in json_str' ?
                    // Shouldn't happen unless json_str' is corrupt
                    JsonObject.create()
                end

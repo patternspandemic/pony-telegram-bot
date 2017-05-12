@@ -41,6 +41,9 @@ actor TelegramAPI
     be client_send_body(data: (String val | Array[U8 val] val), session: HTTPSession tag) =>
         _client.send_body(data, session)
 
+    be log(level: lgr.LogLevel, message: String) =>
+        _logger(level) and _logger.log(message)
+
 
 actor _TelegramAPICall
     """

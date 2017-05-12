@@ -73,3 +73,6 @@ actor Bot
 
     be set_self(user: User iso) =>
         self = consume user
+
+    be log(level: lgr.LogLevel, message: String) =>
+        _logger(level) and _logger.log(message)
