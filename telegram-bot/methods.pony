@@ -17,7 +17,8 @@ type TelegramObjectifier is {(TelegramAPIMethodResponse): TelegramObject iso^ }
 
 trait tag PrimitiveMethod
   fun apply(
-    params: Optional[Map[String val, JsonType ref] iso] = None,
+    //params: Optional[Map[String val, JsonType ref] iso] = None,
+    params: Optional[JsonObject iso] = None,
     request_method': Optional[String] = None)
     : _TelegramMethod iso^
   =>
@@ -92,7 +93,8 @@ primitive SendMessage is PrimitiveMethod
 trait GeneralTelegramMethod
   fun telegram_method(): TelegramMethod
   fun request_method(): String
-  fun params(): Optional[Map[String val, JsonType ref] val]
+  //fun params(): Optional[Map[String val, JsonType ref] val]
+  fun params(): Optional[JsonObject val]
   fun name(): String
   fun fulfill(method_response: TelegramAPIMethodResponse val)
   fun reject()
@@ -102,13 +104,15 @@ trait GeneralTelegramMethod
 class iso _TelegramMethod is GeneralTelegramMethod
   let _telegram_method: PrimitiveMethod
   let _request_method: String
-  let _params: Optional[Map[String val, JsonType ref] val]
+  //let _params: Optional[Map[String val, JsonType ref] val]
+  let _params: Optional[JsonObject val]
   let _promise: Promise[TelegramAPIMethodResponse]
 
   new iso create(
     telegram_method': PrimitiveMethod,
     request_method': String,
-    params': Optional[Map[String val, JsonType ref] iso] = None)
+    //params': Optional[Map[String val, JsonType ref] iso] = None)
+    params': Optional[JsonObject iso] = None)
   =>
     _telegram_method = telegram_method'
     _request_method = request_method'
@@ -138,7 +142,8 @@ class iso _TelegramMethod is GeneralTelegramMethod
   fun request_method(): String =>
     _request_method
 
-  fun params(): Optional[Map[String val, JsonType ref] val] =>
+  //fun params(): Optional[Map[String val, JsonType ref] val] =>
+  fun params(): Optional[JsonObject val] =>
     _params
 
   fun name(): String =>

@@ -83,7 +83,11 @@ actor Bot
     api = api'
 
   be set_self(user: User iso) =>
-      self = consume user
+    self = consume user
+    try
+      _logger(lgr.Info) and _logger.log("Bot's self:")
+      _logger(lgr.Info) and _logger.log((self as User).json.string(" ", true))
+    end
 
   be log(level: lgr.LogLevel, message: String) =>
-      _logger(level) and _logger.log(message)
+    _logger(level) and _logger.log(message)

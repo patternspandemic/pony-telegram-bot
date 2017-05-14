@@ -8,6 +8,7 @@ use lgr = "logger"
 use "collections"
 use "net/ssl"
 use "files"
+use "json"
 
 actor TelegramAPI
   """
@@ -62,6 +63,7 @@ actor _TelegramAPICall
   let _logger: lgr.Logger[String] //StringLogger
   let _api: TelegramAPI tag
   let _method: GeneralTelegramMethod iso
+  var _response: (Payload val | None) = None
 
   new create(
     logger: lgr.Logger[String],
@@ -72,11 +74,7 @@ actor _TelegramAPICall
     // An object that will produce response handlers to a request as needed.
     let handle_maker = recover val APIResponseNotifyFactory.create(this) end
 
-    // Build or get Payload with the method obj
-    // match on method.method?
-    //   - decide to send get params as URL query string, json
-    //   - yada
-
+    // Construct the complete URL
     let request_url: URL =
       try
         URL.valid(url_base.string() + method.name())
@@ -86,22 +84,36 @@ actor _TelegramAPICall
         url_base
       end
 
+    // Create and setup a request
     let request = Payload.request(method.request_method(), request_url)
-    request("User-Agent") = "Pony Telegram Bot"
-    //request("Content-type") = ... // not needed with query string?
+    request("User-Agent") = "Pony Telegram Bot" // TODO: Make user setable
+
+    match request.method
+    | "Get" =>
+      match method.params()
+      | let jo: JsonObject val =>
+        request("Content-type") = "application/json"
+        request.add_chunk(jo.string())
+      end
+    | "POST" =>
+      request("Content-type") = "multipart/form-data"
+      // TODO: Support "multipart/form-data" when uploading files.
+      // Stream transfer mode setup..
+    end
 
     // Make the call
-    // let sent_request: Payload = client(consume request, handle_maker)
     api.call_client(this, consume request, handle_maker)
 
+    // Needed for later behavior calls on this object
     _logger = logger
     _api = api
     _method = consume method
 
   be with_sent_payload(payload: Payload val) =>
     // TODO:
-    // If transfer_mode is Stream or Chunked (either marked on payload or this _TelegramAPICall),
-    // Send body data via session returned in payload, i.e. for POST requests.
+    // If transfer_mode is Stream or Chunked (either marked on payload or this
+    // _TelegramAPICall), Send body data via session returned in payload, i.e.
+    // for POST requests of the streamed / chunked variety.
     None
 
   be cancelled() =>
@@ -136,6 +148,9 @@ actor _TelegramAPICall
     end
     // Get response payload
     // error check?
+
+    // Store response until finished?
+    _response = response
 
   be have_body(data: ByteSeq val) =>
     // Handle body data
