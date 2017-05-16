@@ -65,6 +65,7 @@ actor _TelegramAPICall
   let _api: TelegramAPI tag
   let _method: GeneralTelegramMethod iso
   var _response: (Payload val | None) = None
+  embed _body: Array[ByteSeq val] = _body.create()
 
   new create(
     logger: lgr.Logger[String],
@@ -152,7 +153,23 @@ actor _TelegramAPICall
       _logger(lgr.Info) and _logger.log(k + ": " + v)
     end
 
-    _logger(lgr.Info) and _logger.log("-- Begin Body --")
+    try
+      let body_size = response.body_size() as USize
+      let body = response.body()
+      if body_size > 0 then
+        _body.push(body)
+        // for piece in body.values() do
+        //   match piece
+        //   | let s: String val =>
+        //     _logger(lgr.Info) and _logger.log(s)
+        //     _body.push(s)
+        //   | let a: Array[U8 val] val =>
+        //     _logger(lgr.Info) and _logger.log(String.from_array(a))
+        //     _body.push(a)
+        //   end
+        // end
+      end
+    end
     // Get response payload
     // error check?
 
@@ -160,17 +177,28 @@ actor _TelegramAPICall
     _response = response
 
   be have_body(data: ByteSeq val) =>
-    // Handle body data
-    //_logger(lgr.Info) and _logger.log(data)
-    //_logger(lgr.Info) and _logger.log("Handling body data")
-    match data
-    | let s: String val =>
-      _logger(lgr.Info) and _logger.log(s)
-    | let a: Array[U8 val] val =>
-      _logger(lgr.Info) and _logger.log(String.from_array(a))
-    end
+    // Collect body data
+    _body.push(data)
+    // match data
+    // | let s: String val =>
+    //   _logger(lgr.Info) and _logger.log(s)
+    // | let a: Array[U8 val] val =>
+    //   _logger(lgr.Info) and _logger.log(String.from_array(a))
+    // end
 
   be finished() =>
+    // Done collecting body data
+    // TODO: Use Itertools to join body data into string,
+    // and parse as JsonDoc.
+    _logger(lgr.Info) and _logger.log("-- Begin Body --\r\n")
+    for piece in _body.values() do
+      match piece
+      | let s: String val =>
+        _logger(lgr.Info) and _logger.log(s)
+      | let a: Array[U8 val] val =>
+        _logger(lgr.Info) and _logger.log(String.from_array(a))
+      end
+    end
     _logger(lgr.Info) and _logger.log("-- End Body --\r\n")
     // Create expected result (json string) of the promiser from the api & json in the response, from _method's expect objectifier?
     // perhaps verify json is parsable?
