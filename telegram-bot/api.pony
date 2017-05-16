@@ -5,6 +5,7 @@ https://core.telegram.org/bots/api
 
 use "net/http"
 use lgr = "logger"
+use "format"
 use "collections"
 use "net/ssl"
 use "files"
@@ -109,7 +110,24 @@ actor _TelegramAPICall
     _api = api
     _method = consume method
 
-  be with_sent_payload(payload: Payload val) =>
+  be with_sent_payload(request: Payload val) =>
+    _logger(lgr.Info) and _logger.log("API method call: " + _method.name())
+    try
+      let params: JsonObject val = _method.params() as JsonObject val
+      _logger(lgr.Info) and _logger.log(params.string(" ", true))
+    end
+    // _logger(lgr.Info) and _logger.log("-- Begin Body --")
+    // try
+    //   let body = request.body()
+    //   for piece in body.values() do
+    //     match piece
+    //     | let s: String =>
+    //       _logger(lgr.Info) and _logger.log(s)
+    //     end
+    //   end
+    // end
+    // _logger(lgr.Info) and _logger.log("-- End Body --\r\n")
+
     // TODO:
     // If transfer_mode is Stream or Chunked (either marked on payload or this
     // _TelegramAPICall), Send body data via session returned in payload, i.e.
@@ -126,26 +144,15 @@ actor _TelegramAPICall
     end
 
     _logger(lgr.Info) and _logger.log(
-      "Response " +
-      response.status.string() + " " +
-      response.method)
+      "API method response: " + _method.name() + "\r\n"
+      response.status.string() + " " + response.method)
 
     // Print all the headers
     for (k, v) in response.headers().pairs() do
       _logger(lgr.Info) and _logger.log(k + ": " + v)
     end
 
-    _logger(lgr.Info) and _logger.log("")
-
-    // Print the body if there is any.  This will fail in Chunked or
-    // Stream transfer modes.
-    try
-      let body = response.body()
-      for piece in body.values() do
-        //_logger(lgr.Info) and _logger.log(piece)
-        _logger(lgr.Info) and _logger.log("Handling body piece")
-      end
-    end
+    _logger(lgr.Info) and _logger.log("-- Begin Body --")
     // Get response payload
     // error check?
 
@@ -155,10 +162,16 @@ actor _TelegramAPICall
   be have_body(data: ByteSeq val) =>
     // Handle body data
     //_logger(lgr.Info) and _logger.log(data)
-    _logger(lgr.Info) and _logger.log("Handling body data")
+    //_logger(lgr.Info) and _logger.log("Handling body data")
+    match data
+    | let s: String val =>
+      _logger(lgr.Info) and _logger.log(s)
+    | let a: Array[U8 val] val =>
+      _logger(lgr.Info) and _logger.log(String.from_array(a))
+    end
 
   be finished() =>
-    _logger(lgr.Info) and _logger.log("-- end of body --")
+    _logger(lgr.Info) and _logger.log("-- End Body --\r\n")
     // Create expected result (json string) of the promiser from the api & json in the response, from _method's expect objectifier?
     // perhaps verify json is parsable?
     // fullfill/Reject the _method's promise depending on success of result's creation

@@ -21,7 +21,8 @@ actor Bot
         log_level,
         env.out,
         {(s: String): String => s },
-        lgr.DefaultLogFormatter)
+        {(msg: String val, loc: SourceLoc val): String val => msg}) 
+        //lgr.DefaultLogFormatter
 
     var api': (TelegramAPI | None) = None
 
@@ -42,11 +43,15 @@ actor Bot
       let sslctx =
         try
           recover
-              SSLContext
-                  .> set_client_verify(true)
-                  .> set_authority(FilePath(
-                        env.root as AmbientAuth,
-                        "cacert.pem"))
+            let caps =
+              recover val FileCaps .> set(FileRead) .> set(FileStat) end
+            let pem_path = FilePath(
+              env.root as AmbientAuth,
+              "cacert.pem",
+              caps)
+            SSLContext
+                .> set_client_verify(true)
+                .> set_authority(pem_path)
           end
         else
           logger'(lgr.Error) and logger'.log("Unable to set SSLContext")
