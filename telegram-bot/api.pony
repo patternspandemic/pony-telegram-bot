@@ -37,7 +37,9 @@ actor TelegramAPI
     handle_maker: HandlerFactory val)
   =>
     if request.url is _url_base then
-      _logger(lgr.Error) and _logger.log("Bad _method.string() name")
+      // In the unlikely occurance that the GeneralTelegramMethod name is empty.
+      _logger(lgr.Error) and _logger.log(
+        "Error: GeneralTelegramMethod name() is empty.")
       return
     end
 
@@ -45,7 +47,7 @@ actor TelegramAPI
       var payload_val: Payload val = _client(consume request, handle_maker)
       caller.with_sent_payload(payload_val) // Get payload_val back to caller
     else
-      _logger(lgr.Error) and _logger.log("Call to API client failed.")
+      _logger(lgr.Error) and _logger.log("Error: Call to API client failed.")
     end
 
   be client_send_body(
@@ -82,13 +84,13 @@ actor _TelegramAPICall
         URL.valid(url_base.string() + method.name())
       else
         logger(lgr.Error) and logger.log(
-          "Invalid URL after appending _method.name()")
+          "Error: Invalid URL after appending GeneralTelegramMethod name()")
         url_base
       end
 
     // Create and setup a request
     let request = Payload.request(method.request_method(), request_url)
-    request("User-Agent") = "Pony Telegram Bot" // TODO: Make user setable
+    request("User-Agent") = "Pony Telegram Bot" // TODO: Make user-agent setable
 
     match request.method
     | "Get" =>
@@ -101,6 +103,7 @@ actor _TelegramAPICall
       request("Content-type") = "multipart/form-data"
       // TODO: Support "multipart/form-data" when uploading files.
       // Stream transfer mode setup..
+      // Send body data in with_sent_payload..
     end
 
     // Make the call
@@ -112,52 +115,48 @@ actor _TelegramAPICall
     _method = consume method
 
   be with_sent_payload(request: Payload val) =>
-    _logger(lgr.Info) and _logger.log("API method call: " + _method.name())
+    _logger(lgr.Info) and _logger.log(
+      "API call: " + request.method + " " + _method.name())
     try
       let params: JsonObject val = _method.params() as JsonObject val
       _logger(lgr.Info) and _logger.log(params.string(" ", true))
     end
-    // _logger(lgr.Info) and _logger.log("-- Begin Body --")
-    // try
-    //   let body = request.body()
-    //   for piece in body.values() do
-    //     match piece
-    //     | let s: String =>
-    //       _logger(lgr.Info) and _logger.log(s)
-    //     end
-    //   end
-    // end
-    // _logger(lgr.Info) and _logger.log("-- End Body --\r\n")
 
     // TODO:
     // If transfer_mode is Stream or Chunked (either marked on payload or this
     // _TelegramAPICall), Send body data via session returned in payload, i.e.
     // for POST requests of the streamed / chunked variety.
+    // Make note in log info.
     None
 
   be cancelled() =>
-    _logger(lgr.Info) and _logger.log("-- response cancelled --")
+    // TODO: Consider retrying API method call? What are consequences?
+    _logger(lgr.Warn) and _logger.log(
+      "Warning: Cancelled API call: " + _method.name())
 
   be have_response(response: Payload val) =>
     if response.status == 0 then
-      _logger(lgr.Warn) and _logger.log("Failed")
+      _logger(lgr.Warn) and _logger.log("Warning: Failed payload response.")
       return
     end
 
     _logger(lgr.Info) and _logger.log(
-      "API method response: " + _method.name() + "\r\n"
+      "API response: " + _method.name() + "\r\n .. " +
       response.status.string() + " " + response.method)
 
     // Print all the headers
+    _logger(lgr.Fine) and _logger.log(" .. Headers:")
     for (k, v) in response.headers().pairs() do
-      _logger(lgr.Info) and _logger.log(k + ": " + v)
+      _logger(lgr.Fine) and _logger.log("    " + k + ": " + v)
     end
 
     try
       let body_size = response.body_size() as USize
       let body = response.body()
       if body_size > 0 then
-        _body.push(body)
+        for piece in body.values() do
+          _body.push(piece)
+        end
         // for piece in body.values() do
         //   match piece
         //   | let s: String val =>
@@ -190,7 +189,7 @@ actor _TelegramAPICall
     // Done collecting body data
     // TODO: Use Itertools to join body data into string,
     // and parse as JsonDoc.
-    _logger(lgr.Info) and _logger.log("-- Begin Body --\r\n")
+    _logger(lgr.Info) and _logger.log(" .. Body:")
     for piece in _body.values() do
       match piece
       | let s: String val =>
@@ -199,7 +198,7 @@ actor _TelegramAPICall
         _logger(lgr.Info) and _logger.log(String.from_array(a))
       end
     end
-    _logger(lgr.Info) and _logger.log("-- End Body --\r\n")
+    _logger(lgr.Info) and _logger.log(" .")
     // Create expected result (json string) of the promiser from the api & json in the response, from _method's expect objectifier?
     // perhaps verify json is parsable?
     // fullfill/Reject the _method's promise depending on success of result's creation
