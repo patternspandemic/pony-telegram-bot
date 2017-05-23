@@ -4,8 +4,6 @@ use "net/ssl"
 use "files"
 
 actor Bot
-  //let _log_level: lgr.LogLevel
-  //let _logger: lgr.StringLogger
   let _logger: lgr.Logger[String]
   var api: (TelegramAPI | None) = None
   var self: (User | None) = None
@@ -15,14 +13,12 @@ actor Bot
     api_token: String,
     log_level: lgr.LogLevel = lgr.Warn)
   =>
-    //_logger = lgr.StringLogger(
     let logger' =
       lgr.Logger[String].create(
         log_level,
         env.out,
         {(s: String): String => s },
-        {(msg: String val, loc: SourceLoc val): String val => msg}) 
-        //lgr.DefaultLogFormatter
+        {(msg: String val, loc: SourceLoc val): String val => msg})
 
     logger'(lgr.Info) and logger'.log("Initializing Bot")
 

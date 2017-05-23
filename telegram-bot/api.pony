@@ -15,7 +15,7 @@ actor TelegramAPI
   """
   Lowest level interation with the Telegram API.
   """
-  let _logger: lgr.Logger[String] // lgr.StringLogger
+  let _logger: lgr.Logger[String]
   let _client: HTTPClient
   let _url_base: URL
 
@@ -63,11 +63,11 @@ actor _TelegramAPICall
   """
   Do the work of one call to the Telegram API
   """
-  let _logger: lgr.Logger[String] //StringLogger
+  let _logger: lgr.Logger[String]
   let _api: TelegramAPI tag
   let _method: GeneralTelegramMethod iso
   var _response: (Payload val | None) = None
-  embed _body: Array[ByteSeq val] = _body.create()
+  var _body: Array[U8 val] iso
 
   new create(
     logger: lgr.Logger[String],
@@ -113,13 +113,16 @@ actor _TelegramAPICall
     _logger = logger
     _api = api
     _method = consume method
+    _body = recover _body.create() end
 
   be with_sent_payload(request: Payload val) =>
     _logger(lgr.Info) and _logger.log(
       "API call: " + request.method + " " + _method.name())
     try
       let params: JsonObject val = _method.params() as JsonObject val
-      _logger(lgr.Info) and _logger.log(params.string(" ", true))
+      _logger(lgr.Info) and _logger.log(" .. Params:")
+      _logger(lgr.Info) and _logger.log(params.string("  ", true))
+      _logger(lgr.Info) and _logger.log(" .")
     end
 
     // TODO:
@@ -152,53 +155,52 @@ actor _TelegramAPICall
 
     try
       let body_size = response.body_size() as USize
-      let body = response.body()
+      let data = response.body()
       if body_size > 0 then
-        for piece in body.values() do
-          _body.push(piece)
+        for piece in data.values() do
+          match piece
+          | let str_data: String val => _body.append(str_data.array())
+          | let byte_data: Array[U8 val] val => _body.append(byte_data)
+          end
         end
-        // for piece in body.values() do
-        //   match piece
-        //   | let s: String val =>
-        //     _logger(lgr.Info) and _logger.log(s)
-        //     _body.push(s)
-        //   | let a: Array[U8 val] val =>
-        //     _logger(lgr.Info) and _logger.log(String.from_array(a))
-        //     _body.push(a)
-        //   end
-        // end
       end
     end
-    // Get response payload
-    // error check?
 
-    // Store response until finished?
     _response = response
 
   be have_body(data: ByteSeq val) =>
     // Collect body data
-    _body.push(data)
-    // match data
-    // | let s: String val =>
-    //   _logger(lgr.Info) and _logger.log(s)
-    // | let a: Array[U8 val] val =>
-    //   _logger(lgr.Info) and _logger.log(String.from_array(a))
-    // end
+    match data
+    | let str_data: String val => _body.append(str_data.array())
+    | let byte_data: Array[U8 val] val => _body.append(byte_data)
+    end
 
   be finished() =>
-    // Done collecting body data
-    // TODO: Use Itertools to join body data into string,
-    // and parse as JsonDoc.
+    // Done collecting body data at this point. Proceed with creating a JsonDoc
+    // out of the response body, and fullfilling the method's promise with its
+    // result as json string.
+
+    // FIXME: Maybe better way than destructive read?
+    let body: Array[U8 val] iso = _body = recover _body.create() end
+    let body_val: Array[U8 val] val = consume body
+    let body_string: String = String.from_array(body_val)
+    let json_doc: JsonDoc iso = JsonDoc.create()
+
     _logger(lgr.Info) and _logger.log(" .. Body:")
-    for piece in _body.values() do
-      match piece
-      | let s: String val =>
-        _logger(lgr.Info) and _logger.log(s)
-      | let a: Array[U8 val] val =>
-        _logger(lgr.Info) and _logger.log(String.from_array(a))
-      end
+    try
+      json_doc.parse(body_string)
+      _logger(lgr.Info) and _logger.log(json_doc.string("  ", true))
+    else
+      // TODO: Perhaps should be error?
+      _logger(lgr.Warn) and _logger.log(
+        "Warning: Could not parse body as json: " + json_doc.parse_report()._2)
+        return
     end
     _logger(lgr.Info) and _logger.log(" .")
+
+    // TODO: Handle unsuccessful json response, were 'ok': false
+    // i.e. PossiblyUnavailableChatMethod stuff, etc.
+
     // Create expected result (json string) of the promiser from the api & json in the response, from _method's expect objectifier?
     // perhaps verify json is parsable?
     // fullfill/Reject the _method's promise depending on success of result's creation
