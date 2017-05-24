@@ -5,6 +5,7 @@ use "promises"
 class val TelegramAPIMethodResponse
   var api: TelegramAPI tag
   var json_str_response: String val
+  // TODO: Add 'ok': false (response error) information
 
   new val create(api': TelegramAPI tag, json_str_response': String val) =>
     api = api'

@@ -180,11 +180,13 @@ actor _TelegramAPICall
     // out of the response body, and fullfilling the method's promise with its
     // result as json string.
 
+    // TODO: Reject promise anywhere this method returns early
+
     // FIXME: Maybe better way than destructive read?
     let body: Array[U8 val] iso = _body = recover _body.create() end
     let body_val: Array[U8 val] val = consume body
     let body_string: String = String.from_array(body_val)
-    let json_doc: JsonDoc iso = JsonDoc.create()
+    let json_doc: JsonDoc ref = JsonDoc.create()
 
     _logger(lgr.Info) and _logger.log(" .. Body:")
     try
@@ -194,17 +196,54 @@ actor _TelegramAPICall
       // TODO: Perhaps should be error?
       _logger(lgr.Warn) and _logger.log(
         "Warning: Could not parse body as json: " + json_doc.parse_report()._2)
-        return
+      _method.reject()
+      return
     end
-    _logger(lgr.Info) and _logger.log(" .")
 
-    // TODO: Handle unsuccessful json response, were 'ok': false
-    // i.e. PossiblyUnavailableChatMethod stuff, etc.
+    var ok: Bool = false
+    var description: Optional[String] = None
+    var result: Optional[String] = None
+    var error_code: Optional[I64] = None
+    var error_params: Optional[String] = None
 
-    // Create expected result (json string) of the promiser from the api & json in the response, from _method's expect objectifier?
-    // perhaps verify json is parsable?
-    // fullfill/Reject the _method's promise depending on success of result's creation
-    // Callback to TelegramMethod with finished response object?
+    try
+      match json_doc.data
+      | let jo: JsonObject =>
+        // assign to above vars based on 'ok' bool
+        ok = jo.data("ok") as Bool
+        try description = jo.data("description") as String end
+        if ok then
+          result = (jo.data("result") as JsonObject).string()
+          let method_response: TelegramAPIMethodResponse val =
+            TelegramAPIMethodResponse(_api, result as String)
+          _method.fulfill(method_response)
+          _logger(lgr.Fine) and _logger.log(" .. Fulfilled")
+        else
+          // TODO: Handle unavailable chats, flood control, etc.
+          error_code = jo.data("error_code") as I64
+          try error_params = (jo.data("parameters") as JsonObject).string() end
+          // ... reject for now ...
+          _method.reject()
+          _logger(lgr.Fine) and _logger.log(" .. Rejected TEMPORARILY")
+          // ...
+        end
+      else
+        _logger(lgr.Warn) and _logger.log(
+          "Warning: Telegram response was not matched.")
+        _method.reject()
+        _logger(lgr.Fine) and _logger.log(" .. Rejected")
+        //return
+      end
+    else
+      _logger(lgr.Error) and _logger.log(
+        "Error: Telegram JsonObject response has changed.")
+      _method.reject()
+      _logger(lgr.Fine) and _logger.log(" .. Rejected")
+      //return
+    then
+      _logger(lgr.Info) and _logger.log(" .")
+    end
+    // TODO: Add error 'parameters': information to TelegramAPIMethodResponse
 
 class APIResponseNotifyFactory is HandlerFactory
   let _main: _TelegramAPICall
