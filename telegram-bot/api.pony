@@ -180,8 +180,6 @@ actor _TelegramAPICall
     // out of the response body, and fullfilling the method's promise with its
     // result as json string.
 
-    // TODO: Reject promise anywhere this method returns early
-
     // FIXME: Maybe better way than destructive read?
     let body: Array[U8 val] iso = _body = recover _body.create() end
     let body_val: Array[U8 val] val = consume body
@@ -213,6 +211,7 @@ actor _TelegramAPICall
         ok = jo.data("ok") as Bool
         try description = jo.data("description") as String end
         if ok then
+          // TODO: Match on JsonArray as well, for i.e. updates..
           result = (jo.data("result") as JsonObject).string()
           let method_response: TelegramAPIMethodResponse val =
             TelegramAPIMethodResponse(_api, result as String)
@@ -220,9 +219,12 @@ actor _TelegramAPICall
           _logger(lgr.Fine) and _logger.log(" .. Fulfilled")
         else
           // TODO: Handle unavailable chats, flood control, etc.
+          //   - Resend when chat migrated
+          //   - Ask api to wait to process when flood control occurs
           error_code = jo.data("error_code") as I64
           try error_params = (jo.data("parameters") as JsonObject).string() end
           // ... reject for now ...
+          // ... but maybe fulfill with TelegramAPIMethodResponse w/error info
           _method.reject()
           _logger(lgr.Fine) and _logger.log(" .. Rejected TEMPORARILY")
           // ...

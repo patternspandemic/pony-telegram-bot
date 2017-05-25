@@ -226,6 +226,8 @@ class Update is TelegramObject
         | "inline_query" => NotImplemented // InlineQuery(api, json_str)
         | "chosen_inline_result" => NotImplemented // ChosenInlineResult(api, json_str)
         | "callback_query" => NotImplemented // CallbackQuery(api, json_str)
+        | "shipping_query" => NotImplemented // ShippingQuery(api, json_str)
+        | "pre_checkout_query" => NotImplemented // PreCheckoutQuery(api, json_str)
         else
           UnknownField
         end
@@ -277,7 +279,8 @@ class User is TelegramObject
     try
       match field
       | "id" => jt as I64
-      | "first_name" | "last_name" | "username" => jt as String
+      | "first_name" | "last_name" | "username" | "language_code" =>
+        jt as String
       else
         UnknownField
       end
@@ -332,8 +335,8 @@ class Message is TelegramObject
       | "text" | "caption" | "new_chat_title" => jt as String
       | "delete_chat_photo" | "group_chat_created" | "supergroup_chat_created" |
         "channel_chat_created" => jt as Bool
-      | "from" | "forward_from" | "new_chat_member" | "left_chat_member" =>
-        User(api, json_str)
+      | "from" | "forward_from" | "left_chat_member" => User(api, json_str)
+      | "new_chat_members" => None // FIXME: Array[User]
       | "chat" | "forward_from_chat" => NotImplemented // Chat(api, json_str)
       | "reply_to_message" | "pinned_message" => Message(api, json_str)
       | "audio" => NotImplemented // Audio(api, json_str)
@@ -342,11 +345,14 @@ class Message is TelegramObject
       | "sticker" => NotImplemented // Sticker(api, json_str)
       | "video" => NotImplemented // Video(api, json_str)
       | "voice" => NotImplemented // Voice(api, json_str)
+      | "video_note" => NotImplemented // VideoNote(api, json_str)
       | "contact" => NotImplemented // Contact(api, json_str)
       | "location" => NotImplemented // Location(api, json_str)
       | "venue" => NotImplemented // Venue(api, json_str)
       | "entities" => None // FIXME: Array[MessageEntity]
       | "photo" | "new_chat_photo" => None // FIXME: Array[PhotoSize]
+      | "invoice" => NotImplemented // Invoice(api, json_str)
+      | "successful_payment" => NotImplemented // SuccessfulPayment(api, json_str)
       else
         UnknownField
       end
@@ -602,6 +608,7 @@ class InlineKeyboardButton is TelegramObject
     var switch_inline_query: Optional[String] = None
     var switch_inline_query_current_chat: Optional[String] = None
     var callback_game: Optional[CallbackGame] = None
+    var pay: Optional[Bool] = None
 
     new create(json: JsonObject) ? =>
         text = json.data("text") as String
@@ -610,6 +617,7 @@ class InlineKeyboardButton is TelegramObject
         switch_inline_query = try json.data("switch_inline_query") as String end
         switch_inline_query_current_chat = try json.data("switch_inline_query_current_chat") as String end
         callback_game = try CallbackGame(json.data("callback_game") as JsonObject) end
+        pay = try json.data("pay") as Bool end
 
 class CallbackQuery is (TelegramObject & APIUser)
     var _api: TelegramAPI
@@ -755,6 +763,7 @@ class InlineQueryResultGif is TelegramObject
     var gif_url: String
     var gif_width: Optional[I64] = None
     var gif_height: Optional[I64] = None
+    var gif_duration: Optional[I64] = None
     var thumb_url: String
     var title: Optional[String] = None
     var caption: Optional[String] = None
@@ -767,6 +776,7 @@ class InlineQueryResultGif is TelegramObject
         gif_url = json.data("gif_url") as String
         gif_width = try json.data("gif_width") as I64 end
         gif_height = try json.data("gif_height") as I64 end
+        gif_duration = try json.data("gif_duration") as I64 end
         thumb_url = json.data("thumb_url") as String
         title = try json.data("title") as String end
         caption = try json.data("caption") as String end
@@ -779,6 +789,7 @@ class InlineQueryResultMpeg4Gif is TelegramObject
     var mpeg4_url: String
     var mpeg4_width: Optional[I64] = None
     var mpeg4_height: Optional[I64] = None
+    var mpeg4_duration: Optional[I64] = None
     var thumb_url: String
     var title: Optional[String] = None
     var caption: Optional[String] = None
@@ -791,6 +802,7 @@ class InlineQueryResultMpeg4Gif is TelegramObject
         mpeg4_url = json.data("mpeg4_url") as String
         mpeg4_width = try json.data("mpeg4_width") as I64 end
         mpeg4_height = try json.data("mpeg4_height") as I64 end
+        mpeg4_duration = try json.data("mpeg4_duration") as I64 end
         thumb_url = json.data("thumb_url") as String
         title = try json.data("title") as String end
         caption = try json.data("caption") as String end
@@ -1193,6 +1205,16 @@ class ChosenInlineResult is (TelegramObject & APIUser)
         location = try Location(json.data("location") as JsonObject) end
         inline_message_id = try json.data("inline_message_id") as String end
         query = json.data("query") as String
+
+// TODO:
+// LabeledPrice
+// Invoice
+// ShippingAddress
+// OrderInfo
+// ShippingOption
+// SuccessfulPayment
+// ShippingQuery
+// PreCheckoutQuery
 
 class Game is (TelegramObject & APIUser)
     var _api: TelegramAPI

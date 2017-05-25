@@ -11,9 +11,10 @@ class val TelegramAPIMethodResponse
     api = api'
     json_str_response = json_str_response'
 
+/*
 // TODO: May not need
 type TelegramObjectifier is {(TelegramAPIMethodResponse): TelegramObject iso^ }
-
+*/
 
 
 trait tag PrimitiveMethod
@@ -37,19 +38,61 @@ trait tag PrimitiveMethod
 
   fun tag self(): TelegramMethod
   fun tag string(): String
+  /*
   // TODO: May no longer need
   fun tag objectifier(): TelegramObjectifier val^
+  */
 
 type TelegramMethod is
   ( GetUpdates
+//   | SetWebhook
+//   | DeleteWebhook
+//   | GetWebhook
   | GetMe
   | SendMessage
-  //| ...
+//   | ForwardMessage
+//   | SendPhoto
+//   | SendAudio
+//   | SendDocument
+//   | SendSticker
+//   | SendVideo
+//   | SendVoice
+//   | SendVideoNote
+//   | SendLocation
+//   | SendVenue
+//   | SendContact
+//   | SendChatAction
+//   | GetUserProfilePhotos
+//   | GetFile
+//   | KickChatMember
+//   | LeaveChat
+//   | UnbanChatMember
+//   | GetChat
+//   | GetChatAdministrators
+//   | GetChatMembersCount
+//   | GetChatMember
+//   | AnswerCallbackQuery
+//   | EditMessageText
+//   | EditMessageCaption
+//   | EditMessageReplyMarkup
+//   | DeleteMessage
+//   | AnswerInlineQuery
+//   | SendInvoice
+//   | AnswerShippingQuery
+//   | AnswerPreCheckoutQuery
+//   | SendGame
+//   | SetGameScore
+//   | GetGameHighScores
+//   | SendInvoice
+//   | AnswerShippingQuery
+//   | AnswerPreCheckoutQuery
   )
 
+// getUpdates -> Updates
 primitive GetUpdates is PrimitiveMethod
   fun tag self(): TelegramMethod => this
   fun tag string(): String => "getUpdates"
+  /*
   // TODO: May no longer need
   fun tag objectifier(): TelegramObjectifier val^ =>
     {(message_response: TelegramAPIMethodResponse): TelegramObject iso^ =>
@@ -60,10 +103,18 @@ primitive GetUpdates is PrimitiveMethod
         end
       consume to
     }
+  */
 
+// TODO:
+// setWebhook
+// deleteWebhook
+// getWebhook
+
+// getMe -> User
 primitive GetMe is PrimitiveMethod
   fun tag self(): TelegramMethod => this
   fun tag string(): String => "getMe"
+  /*
   // TODO: May no longer need
   fun tag objectifier(): TelegramObjectifier val^ =>
     {(message_response: TelegramAPIMethodResponse): TelegramObject iso^ =>
@@ -74,10 +125,12 @@ primitive GetMe is PrimitiveMethod
         end
       consume to
     }
+  */
 
 primitive SendMessage is PrimitiveMethod
   fun tag self(): TelegramMethod => this
   fun tag string(): String => "sendMessage"
+  /*
   // TODO: May no longer need
   fun tag objectifier(): TelegramObjectifier val^ =>
     {(message_response: TelegramAPIMethodResponse): TelegramObject iso^ =>
@@ -88,6 +141,7 @@ primitive SendMessage is PrimitiveMethod
         end
       consume to
     }
+  */
 
 
 
@@ -99,8 +153,10 @@ trait GeneralTelegramMethod
   fun name(): String
   fun fulfill(method_response: TelegramAPIMethodResponse val)
   fun reject()
+  /*
   // TODO: May no longer need
   fun expect(): TelegramObjectifier val^
+  */
 
 class iso _TelegramMethod is GeneralTelegramMethod
   let _telegram_method: PrimitiveMethod
@@ -133,9 +189,11 @@ class iso _TelegramMethod is GeneralTelegramMethod
   fun reject() =>
     _promise.reject()
 
+  /*
   // TODO: May no longer need
   fun expect(): TelegramObjectifier val^ =>
     _telegram_method.objectifier()
+  */
 
   fun telegram_method(): TelegramMethod =>
     _telegram_method.self()
@@ -194,9 +252,9 @@ class GetUpdates is TelegramMethod
     var allowed_updates: Optional[Array[String]] = None
 
 // TODO:
-// setWebhook
-// deleteWebhook
-// getWebhook
+// setWebhook -> True
+// deleteWebhook -> True
+// getWebhook -> WebhookInfo
 
 // getMe -> User
 class GetMe is TelegramMethod
@@ -292,6 +350,9 @@ class SendVoice is TelegramMethod
     var reply_markup: Optional[ReplyMarkup] = None
 
     fun method(): String => "POST"
+
+// TODO:
+// SendVideoNote -> Message
 
 // sendLocation -> Message
 class SendLocation is TelegramMethod
@@ -403,6 +464,9 @@ class EditMessageReplyMarkup is TelegramMethod
     var inline_message_id: Optional[String] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
 
+// TODO:
+// DeleteMessage -> True
+
 // answerInlineQuery -> True
 class AnswerInlineQuery is TelegramMethod
     var inline_query_id: String
@@ -412,6 +476,11 @@ class AnswerInlineQuery is TelegramMethod
     var next_offset: Optional[String] = None
     var switch_pm_text: Optional[String] = None
     var switch_pm_parameter: Optional[String] = None
+
+// TODO:
+// SendInvoice -> Message
+// AnswerShippingQuery -> True
+// AnswerPreCheckoutQuery -> True
 
 // sendGame -> Message
 class SendGame is TelegramMethod
