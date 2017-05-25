@@ -45,47 +45,44 @@ trait tag PrimitiveMethod
 
 type TelegramMethod is
   ( GetUpdates
-//   | SetWebhook
-//   | DeleteWebhook
-//   | GetWebhook
+  | SetWebhook
+  | DeleteWebhook
+  | GetWebhook
   | GetMe
   | SendMessage
-//   | ForwardMessage
-//   | SendPhoto
-//   | SendAudio
-//   | SendDocument
-//   | SendSticker
-//   | SendVideo
-//   | SendVoice
-//   | SendVideoNote
-//   | SendLocation
-//   | SendVenue
-//   | SendContact
-//   | SendChatAction
-//   | GetUserProfilePhotos
-//   | GetFile
-//   | KickChatMember
-//   | LeaveChat
-//   | UnbanChatMember
-//   | GetChat
-//   | GetChatAdministrators
-//   | GetChatMembersCount
-//   | GetChatMember
-//   | AnswerCallbackQuery
-//   | EditMessageText
-//   | EditMessageCaption
-//   | EditMessageReplyMarkup
-//   | DeleteMessage
-//   | AnswerInlineQuery
-//   | SendInvoice
-//   | AnswerShippingQuery
-//   | AnswerPreCheckoutQuery
-//   | SendGame
-//   | SetGameScore
-//   | GetGameHighScores
-//   | SendInvoice
-//   | AnswerShippingQuery
-//   | AnswerPreCheckoutQuery
+  | ForwardMessage
+  | SendPhoto
+  | SendAudio
+  | SendDocument
+  | SendSticker
+  | SendVideo
+  | SendVoice
+  | SendVideoNote
+  | SendLocation
+  | SendVenue
+  | SendContact
+  | SendChatAction
+  | GetUserProfilePhotos
+  | GetFile
+  | KickChatMember
+  | LeaveChat
+  | UnbanChatMember
+  | GetChat
+  | GetChatAdministrators
+  | GetChatMembersCount
+  | GetChatMember
+  | AnswerCallbackQuery
+  | EditMessageText
+  | EditMessageCaption
+  | EditMessageReplyMarkup
+  | DeleteMessage
+  | AnswerInlineQuery
+  | SendInvoice
+  | AnswerShippingQuery
+  | AnswerPreCheckoutQuery
+  | SendGame
+  | SetGameScore
+  | GetGameHighScores
   )
 
 // getUpdates -> Updates
@@ -105,10 +102,21 @@ primitive GetUpdates is PrimitiveMethod
     }
   */
 
-// TODO:
-// setWebhook
-// deleteWebhook
-// getWebhook
+// setWebhook -> True
+// possible POST of InputFile
+primitive SetWebhook is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "setWebhook"
+
+// deleteWebhook -> True
+primitive DeleteWebhook is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "deleteWebhook"
+
+// getWebhook -> WebhookInfo
+primitive GetWebhook is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "getWebhook"
 
 // getMe -> User
 primitive GetMe is PrimitiveMethod
@@ -142,6 +150,178 @@ primitive SendMessage is PrimitiveMethod
       consume to
     }
   */
+
+// forwardMessage -> Message
+primitive ForwardMessage is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "forwardMessage"
+
+// sendPhoto -> Message
+// possible POST of InputFile
+primitive SendPhoto is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "sendPhoto"
+
+// sendAudio -> Message
+// possible POST of InputFile
+primitive SendAudio is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "sendAudio"
+
+// sendDocument -> Message
+// possible POST of InputFile
+primitive SendDocument is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "sendDocument"
+
+// sendSticker -> Message
+// possible POST of InputFile
+primitive SendSticker is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "sendSticker"
+
+// sendVideo -> Message
+// possible POST of InputFile
+primitive SendVideo is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "sendVideo"
+
+// sendVoice -> Message
+// possible POST of InputFile
+primitive SendVoice is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "sendVoice"
+
+// sendVideoNote -> Message
+// possible POST of InputFile
+primitive SendVideoNote is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "sendVideoNote"
+
+// sendLocation -> Message
+primitive SendLocation is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "sendLocation"
+
+// sendVenue -> Message
+primitive SendVenue is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "sendVenue"
+
+// sendContact -> Message
+primitive SendContact is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "sendContact"
+
+// sendChatAction -> True
+primitive SendChatAction is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "sendChatAction"
+
+// getUserProfilePhotos -> UserProfilePhotos
+primitive GetUserProfilePhotos is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "getUserProfilePhotos"
+
+// getFile -> File
+primitive GetFile is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "getFile"
+
+// kickChatMember -> True
+primitive KickChatMember is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "kickChatMember"
+
+// leaveChat -> True
+primitive LeaveChat is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "leaveChat"
+
+// unbanChatMember -> True
+primitive UnbanChatMember is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "unbanChatMember"
+
+// getChat -> Chat
+primitive GetChat is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "getChat"
+
+// getChatAdministrators -> Array[ChatMember]
+primitive GetChatAdministrators is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "getChatAdministrators"
+
+// getChatMembersCount -> I64
+primitive GetChatMembersCount is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "getChatMembersCount"
+
+// getChatMember -> ChatMember
+primitive GetChatMember is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "getChatMember"
+
+// answerCallbackQuery -> True
+primitive AnswerCallbackQuery is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "answerCallbackQuery"
+
+// editMessageText -> Message | True
+primitive EditMessageText is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "editMessageText"
+
+// editMessageCaption -> Message | True
+primitive EditMessageCaption is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "editMessageCaption"
+
+// editMessageReplyMarkup -> Message | True
+primitive EditMessageReplyMarkup is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "editMessageReplyMarkup"
+
+// deleteMessage -> True
+primitive DeleteMessage is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "deleteMessage"
+
+// answerInlineQuery -> True
+primitive AnswerInlineQuery is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "answerInlineQuery"
+
+// sendInvoice -> Message
+primitive SendInvoice is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "sendInvoice"
+
+// answerShippingQuery -> True
+primitive AnswerShippingQuery is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "answerShippingQuery"
+
+// answerPreCheckoutQuery -> True
+primitive AnswerPreCheckoutQuery is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "answerPreCheckoutQuery"
+
+// sendGame -> Message
+primitive SendGame is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "sendGame"
+
+// setGameScore -> ?
+primitive SetGameScore is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "setGameScore"
+
+// getGameHighScores -> Array[GameHighScore]
+primitive GetGameHighScores is PrimitiveMethod
+  fun tag self(): TelegramMethod => this
+  fun tag string(): String => "getGameHighScores"
 
 
 
@@ -213,7 +393,6 @@ class iso _TelegramMethod is GeneralTelegramMethod
 /*
 // BELOW IS OLD
 
-//trait PossiblyUnavailableChatMethod
 type PossiblyUnavailableChatMethod is
     ( SendMessage
     | ForwardMessage
@@ -237,6 +416,8 @@ type PossiblyUnavailableChatMethod is
     | EditMessageText
     | EditMessageCaption
     | EditMessageReplyMarkup
+    | DeleteMessage
+    | SendInvoice
     | SendGame
     | SetGameScore
     | GetGameHighScores
@@ -251,7 +432,6 @@ class GetUpdates is TelegramMethod
     var timeout: Optional[I64] = None
     var allowed_updates: Optional[Array[String]] = None
 
-// TODO:
 // setWebhook -> True
 // deleteWebhook -> True
 // getWebhook -> WebhookInfo
@@ -351,7 +531,6 @@ class SendVoice is TelegramMethod
 
     fun method(): String => "POST"
 
-// TODO:
 // SendVideoNote -> Message
 
 // sendLocation -> Message
@@ -464,7 +643,6 @@ class EditMessageReplyMarkup is TelegramMethod
     var inline_message_id: Optional[String] = None
     var reply_markup: Optional[InlineKeyboardMarkup] = None
 
-// TODO:
 // DeleteMessage -> True
 
 // answerInlineQuery -> True
@@ -477,7 +655,6 @@ class AnswerInlineQuery is TelegramMethod
     var switch_pm_text: Optional[String] = None
     var switch_pm_parameter: Optional[String] = None
 
-// TODO:
 // SendInvoice -> Message
 // AnswerShippingQuery -> True
 // AnswerPreCheckoutQuery -> True

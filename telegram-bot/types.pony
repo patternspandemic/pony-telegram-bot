@@ -48,14 +48,17 @@ primitive JsonHelper
   fun json_obj_to_str(json_obj: JsonObject): String =>
     json_obj.string()
 
-// The type of unknown field in TelegramObject
+primitive MissingRequiredField
+  """The type of a missing required field for a TelegramObject."""
+
 primitive UnknownField
+  """The type of an unknown field for a TelegramObject."""
 
-// The type of field in TelegramObject with unexplected type
 primitive WrongOrChangedField
+  """The type of a TelegramObject field with an unexpected type."""
 
-// The type of un-implemented functionality
 primitive NotImplemented
+  """The type of un-implemented functionality for a TelegramObject field."""
 
 // Telegram object field types, similar to JsonType
 type TelegramType is
@@ -66,6 +69,7 @@ type TelegramType is
   | String val
   | TelegramObject ref
   //| TelegramObjectArray
+  | MissingRequiredField
   | UnknownField
   | WrongOrChangedField
   | NotImplemented
@@ -79,7 +83,7 @@ trait val TelegramObject
   Telegram Bot API Types
   https://core.telegram.org/bots/api#available-types
   """
-  fun ref apply(field: String): TelegramType ? =>
+  fun ref apply(field: String): TelegramType =>
     let fields: JsonObjectData = _fields() // reference the concrete object's underlying json data
     var result: JsonType
 
@@ -89,7 +93,8 @@ trait val TelegramObject
       else
         // error if the field was required
         if _required_fields().contains(field) then
-          error // TODO: Rethink erroring here, perhaps return MissingRequiredField?
+          // TODO: Log Error of missing required field
+          return MissingRequiredField
         else
           // otherwise it was optional, return None
           return None
@@ -122,6 +127,7 @@ trait val TelegramObject
       // | let x: TelegramObjectArray =>
       //     // Map to JsonArray
       //     // TODO / FIXME: ...?
+      | let x: MissingRequiredField => None // TODO: Maybe should be error ?
       | let x: NotImplemented => None // TODO: Maybe should be error ?
       | let x: WrongOrChangedField => None  // TODO: Maybe should be error ?
       end
@@ -148,6 +154,7 @@ trait val TelegramObject
 
 // Concrete Types ...
 
+// TODO: Redefine as TelegramObjectArray
 class Updates is TelegramObject
   var api: TelegramAPI tag
   var json: JsonArray
