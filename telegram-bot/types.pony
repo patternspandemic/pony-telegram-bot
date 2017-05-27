@@ -22,6 +22,18 @@ type JsonObjectData is
     HashEq[String val] val
   ] ref
 
+type JsonArrayData is
+  Array[
+    ( F64 val
+    | I64 val
+    | Bool val
+    | None val
+    | String val
+    | JsonArray ref
+    | JsonObject ref
+    )
+  ] ref
+
 // A Helper for dealing with the underlying JsonObject help by TelegramObjects
 primitive JsonHelper
   fun optional_json_str_to_json_obj(
@@ -68,23 +80,31 @@ type TelegramType is
   | None val
   | String val
   | TelegramObject ref
-  //| TelegramObjectArray
+  | TelegramObjectArray ref
   | MissingRequiredField
   | UnknownField
   | WrongOrChangedField
   | NotImplemented
   )
 
-// TODO: Add trait val TelegramObjectArray and add to TelegramType
-// as analog to JsonArray (Updates and other arrayed responses would be of this type)
+// TODO: May not need apply / update, but simply offer iterator over wrapped json array, that translates to the TelegramType?
+trait val TelegramObjectArray
+  """"""
+  // TODO: May need to be ref
+  fun box apply(i: USize val): TelegramType
+  fun ref update(i: USize val, value: TelegramType): TelegramType
+
+  // The underlying Array of JsonArray data
+  fun ref _json_array_data(): JsonArrayData
+
+  // Underlying JsonArray of TelegramObjectArray
+  fun ref _json(): JsonType
+
 
 trait val TelegramObject
-  """
-  Telegram Bot API Types
-  https://core.telegram.org/bots/api#available-types
-  """
+  """"""
   fun ref apply(field: String): TelegramType =>
-    let fields: JsonObjectData = _fields() // reference the concrete object's underlying json data
+    let fields: JsonObjectData = _json_object_data() // reference the concrete object's underlying json data
     var result: JsonType
 
     // Return None for non-existant fields unless they're in the required list.
@@ -102,11 +122,11 @@ trait val TelegramObject
       end
 
     // Delegate to the concrete object for translating existing
-    // _fields fields from JsonType to TelegramType.
+    // _json_object_data fields from JsonType to TelegramType.
     _json_to_telegram_type(field, result)
 
   fun ref update(field: String, value: TelegramType): TelegramType =>
-    let fields: JsonObjectData = _fields() // reference the concrete object's underlying json data
+    let fields: JsonObjectData = _json_object_data() // reference the concrete object's underlying json data
 
     // value needs to be transformed from TelegramType back to JsonType
     let json_value: JsonType =
@@ -139,7 +159,7 @@ trait val TelegramObject
     _json_to_telegram_type(field, old_json_value)
 
   // The underlying map of JsonObject data
-  fun ref _fields(): JsonObjectData
+  fun ref _json_object_data(): JsonObjectData
 
   // Required fields for the concrete TelegramObject
   fun _required_fields(): Array[String]
@@ -187,7 +207,7 @@ class Updates is TelegramObject
   // Provides its own impl because underlying json is JsonArray
   // FIXME: ? Hopefully this won't be called, nevertheless returns
   // empty JsonObjectData just to fulfill contract with TelegramObject
-  fun ref _fields(): JsonObjectData => JsonObjectData
+  fun ref _json_object_data(): JsonObjectData => JsonObjectData
 
   // Just to fulfill TelegramObject contract
   fun _required_fields(): Array[String] =>
@@ -217,7 +237,7 @@ class Update is TelegramObject
         JsonObject.create()
       end
 
-  fun ref _fields(): JsonObjectData => json.data
+  fun ref _json_object_data(): JsonObjectData => json.data
 
   fun _required_fields(): Array[String] => ["update_id"]
 
@@ -278,7 +298,7 @@ class User is TelegramObject
     api = api'
     json = JsonHelper.optional_json_str_to_json_obj(json_str', 4)
 
-  fun ref _fields(): JsonObjectData => json.data
+  fun ref _json_object_data(): JsonObjectData => json.data
 
   fun _required_fields(): Array[String] => ["id"; "first_name"]
 
@@ -327,7 +347,7 @@ class Message is TelegramObject
     api = api'
     json = JsonHelper.optional_json_str_to_json_obj(json_str', 15) // TODO: Find max message object field count
 
-  fun ref _fields(): JsonObjectData => json.data
+  fun ref _json_object_data(): JsonObjectData => json.data
 
   fun _required_fields(): Array[String] => ["message_id"; "date"; "chat"]
 
