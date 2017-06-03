@@ -219,6 +219,7 @@ class Updates is TelegramObject
 
   fun ref _json(): JsonType => json
 
+/* class AllowedUpdates is TelegramObjectArray */
 
 class Update is TelegramObject
   var api: TelegramAPI tag
@@ -290,13 +291,15 @@ class WebhookInfo is TelegramObject
         end
 */
 
+/* class Users is TelegramObjectArray */
+
 class User is TelegramObject
   var api: TelegramAPI tag
   var json: JsonObject
 
   new create(api': TelegramAPI, json_str': Optional[String] = None) =>
     api = api'
-    json = JsonHelper.optional_json_str_to_json_obj(json_str', 4)
+    json = JsonHelper.optional_json_str_to_json_obj(json_str', 5)
 
   fun ref _json_object_data(): JsonObjectData => json.data
 
@@ -317,27 +320,33 @@ class User is TelegramObject
 
   fun ref _json(): JsonType => json
 
-/*
-class Chat is (TelegramObject & APIUser)
-    var _api: TelegramAPI
-    var id: I64
-    var type': String // ChatType
-    var title: Optional[String] = None
-    var username: Optional[String] = None
-    var first_name: Optional[String] = None
-    var last_name: Optional[String] = None
-    var all_members_are_administrators: Optional[Bool] = None
+class Chat is TelegramObject
+  var api: TelegramAPI tag
+  var json: JsonObject
 
-    new create(json: JsonObject, api: TelegramAPI) ? =>
-        _api = api
-        id = json.data("id") as I64
-        type' = json.data("type") as String
-        title = try json.data("title") as String end
-        username = try json.data("username") as String end
-        first_name = try json.data("first_name") as String end
-        last_name = try json.data("last_name") as String end
-        all_members_are_administrators = try json.data("all_members_are_administrators") as Bool end
-*/
+  new create(api': TelegramAPI, json_str': Optional[String] = None) =>
+    api = api'
+    json = JsonHelper.optional_json_str_to_json_obj(json_str', 6)
+
+  fun ref _json_object_data(): JsonObjectData => json.data
+
+  fun _required_fields(): Array[String] => ["id"; "type"]
+
+  fun _json_to_telegram_type(field: String, jt: JsonType): TelegramType =>
+    try
+      match field
+      | "id" => jt as I64
+      | "type" | "title" | "username" | "first_name" | "last_name"
+        => jt as String
+      | "all_members_are_administrators" => jt as Bool
+      else
+        UnknownField
+      end
+    else
+      WrongOrChangedField
+    end
+
+  fun ref _json(): JsonType => json
 
 class Message is TelegramObject
   var api: TelegramAPI tag
@@ -390,6 +399,8 @@ class Message is TelegramObject
   fun ref _json(): JsonType => json
 
 /*
+class MessageEntities is TelegramObjectArray
+
 class MessageEntity is TelegramObject //is APIUser
     //var _api: TelegramAPI
     var type': String // MessageEntityType
@@ -405,6 +416,8 @@ class MessageEntity is TelegramObject //is APIUser
         length = json.data("length") as I64
         url = try json.data("url") as String end
         user = try User(json.data("user") as JsonObject) end
+
+class PhotoSizes is TelegramObjectArray
 
 class PhotoSize is (TelegramObject & APIUser)
     var _api: TelegramAPI
@@ -592,6 +605,9 @@ class ReplyKeyboardMarkup is TelegramObject
         end
         keyboard'
 
+class KeyboardButtons is TelegramObjectArray
+class KeyboardRow is TelegramObjectArray
+
 class KeyboardButton is TelegramObject
     var text: String
     var request_contact: Optional[Bool] = None
@@ -627,6 +643,9 @@ class InlineKeyboardMarkup is TelegramObject
                 .collect(Array[InlineKeyboardButton](keyboard_button_cnt)))
         end
         keyboard'
+
+class InlineKeyboardButtons is TelegramObjectArray
+class InlineKeyboardRow is TelegramObjectArray
 
 class InlineKeyboardButton is TelegramObject
     var text: String
@@ -674,6 +693,39 @@ class ForceReply is TelegramObject
         force_reply = json.data("force_reply") as Bool
         selective = try json.data("selective") as Bool end
 
+class ChatMembers is TelegramObjectArray
+*/
+
+class ChatMember is TelegramObject
+  var api: TelegramAPI tag
+  var json: JsonObject
+
+  new create(api': TelegramAPI, json_str': Optional[String] = None) =>
+    api = api'
+    json = JsonHelper.optional_json_str_to_json_obj(json_str', 2)
+
+  fun ref _json_object_data(): JsonObjectData => json.data
+
+  fun _required_fields(): Array[String] => ["user"; "status"]
+
+  fun _json_to_telegram_type(field: String, jt: JsonType): TelegramType =>
+    let json_str: String =
+      try JsonHelper.json_obj_to_str(jt as JsonObject)
+      else "" end
+    try
+      match field
+      | "user" => User(api, json_str)
+      | "status" => jt as String
+      else
+        UnknownField
+      end
+    else
+      WrongOrChangedField
+    end
+
+  fun ref _json(): JsonType => json
+
+/*
 class ChatMember is TelegramObject
     var user: User
     var status: String
@@ -707,6 +759,8 @@ class InlineQuery is (TelegramObject & APIUser)
         location = try Location(json.data("location") as JsonObject) end
         query = json.data("query") as String
         offset = json.data("offset") as String
+
+class InlineQueryResults is TelegramObjectArray
 
 type InlineQueryResult is
     ( InlineQueryResultArticle
@@ -1235,10 +1289,12 @@ class ChosenInlineResult is (TelegramObject & APIUser)
 
 // TODO:
 // LabeledPrice
+// LabeledPrices ?
 // Invoice
 // ShippingAddress
 // OrderInfo
 // ShippingOption
+// ShippingOptions ?
 // SuccessfulPayment
 // ShippingQuery
 // PreCheckoutQuery
@@ -1291,6 +1347,8 @@ class Animation is TelegramObject
 class CallbackGame is TelegramObject
     new create(json: JsonObject) =>
         """"""
+
+class GameHighScores is TelegramObjectArray
 
 class GameHighScore is TelegramObject
     var position: I64

@@ -6,23 +6,30 @@ class val TelegramAPIMethodResponse
   var api: TelegramAPI tag
   var json_str_response: String val
   // TODO: Add 'ok': false (response error) information
+  //var objectifier: TelegramObjectifier val
 
-  new val create(api': TelegramAPI tag, json_str_response': String val) =>
+  new val create(
+    api': TelegramAPI tag,
+    json_str_response': String val) //,
+    // objectifier': TelegramObjectifier)
+  =>
     api = api'
     json_str_response = json_str_response'
+    // objectifier = objectifier'
+
+  // fun expected(): TelegramObject iso^ =>
+  //   objectifier(this)
 
 /*
-// TODO: May not need
 type TelegramObjectifier is {(TelegramAPIMethodResponse): TelegramObject iso^ }
 */
-
 
 trait tag PrimitiveMethod
   fun apply(
     //params: Optional[Map[String val, JsonType ref] iso] = None,
     params: Optional[JsonObject iso] = None,
     request_method': Optional[String] = None)
-    : _TelegramMethod iso^
+    : PromisedTelegramMethod iso^
   =>
     let req_method: String =
       try
@@ -31,17 +38,14 @@ trait tag PrimitiveMethod
         // Use default request method for this telegram method
         request_method()
       end
-    _TelegramMethod(this, req_method, consume params)
+    PromisedTelegramMethod(this, req_method, consume params)
 
   // Default request method for Telegram API method calls
   fun request_method(): String => "GET"
 
   fun tag self(): TelegramMethod
   fun tag string(): String
-  /*
-  // TODO: May no longer need
-  fun tag objectifier(): TelegramObjectifier val^
-  */
+  /* fun tag objectifier(): TelegramObjectifier val^ */
 
 type TelegramMethod is
   ( GetUpdates
@@ -333,12 +337,16 @@ trait GeneralTelegramMethod
   fun name(): String
   fun fulfill(method_response: TelegramAPIMethodResponse val)
   fun reject()
+  // fun ref next[T: Any #share](
+  //   fulfiller: Fulfill[TelegramAPIMethodResponse, T],
+  //   rejecter: Reject[T] = RejectAlways[T])
+  //   : Promise[T]
   /*
   // TODO: May no longer need
   fun expect(): TelegramObjectifier val^
   */
 
-class iso _TelegramMethod is GeneralTelegramMethod
+class iso PromisedTelegramMethod is GeneralTelegramMethod
   let _telegram_method: PrimitiveMethod
   let _request_method: String
   //let _params: Optional[Map[String val, JsonType ref] val]

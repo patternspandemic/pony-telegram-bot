@@ -211,7 +211,8 @@ actor _TelegramAPICall
         ok = jo.data("ok") as Bool
         try description = jo.data("description") as String end
         if ok then
-          // TODO: Match on JsonArray as well, for i.e. updates..
+          // TODO: Match on JsonArray as well, for i.e. updates, other methods
+          // returning array of ...
           result = (jo.data("result") as JsonObject).string()
           let method_response: TelegramAPIMethodResponse val =
             TelegramAPIMethodResponse(_api, result as String)

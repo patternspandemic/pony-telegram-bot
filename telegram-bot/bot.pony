@@ -118,3 +118,10 @@ actor Bot
 
   be log(level: lgr.LogLevel, message: String) =>
     _logger(level) and _logger.log(message)
+
+  be apply(method: GeneralTelegramMethod iso) =>
+    match api
+    | let api': TelegramAPI => api'(consume method)
+    | None => _logger(lgr.Warn) and _logger.log(
+      "Bot attempted to use API without it set.")
+    end
