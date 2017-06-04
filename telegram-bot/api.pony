@@ -16,21 +16,46 @@ actor TelegramAPI
   Lowest level interation with the Telegram API.
   """
   let _logger: lgr.Logger[String]
-  let _client: HTTPClient
+  //let _client: HTTPClient
   let _url_base: URL
+  let _sslctx: SSLContext val // TODO: Temporary
+  let _env: Env // TODO: Temporary
 
+  // For the time being, each _TelegramAPICall needs its own HTTPClient, due to
+  // the way multiple request/responses work over a session (can't be paired up)
   new create(
     logger': lgr.Logger[String],
     url_base': URL,
-    client': HTTPClient iso)
+    sslctx: SSLContext val,
+    env: Env)
+    //client': HTTPClient iso)
   =>
     _logger = logger'
     _url_base = url_base'
-    _client = consume client'
+    // _client = consume client'
+    _env = env
+    _sslctx = sslctx
 
   be apply(method: GeneralTelegramMethod iso) =>
-      _TelegramAPICall(_logger, this, _url_base, consume method)
+    // TODO: Use improved HTTPClient if/when available,
+    // until then create a client for each _TelegramAPICall
+    // ...
+    // An HTTP client to supply to the _TelegramAPICall.    
+    try
+      let client: HTTPClient iso = recover
+        HTTPClient(_env.root as AmbientAuth, _sslctx)
+      end
+      _TelegramAPICall(_logger, this, _url_base, consume method, consume client)
+    else
+      _logger(lgr.Error) and _logger.log(
+        "Error: Unable to use network.")
+      // error
+    end
 
+    // _TelegramAPICall(_logger, this, _url_base, consume method)
+    
+
+/*  // Client moved to _TelegramAPICall for time being
   be call_client(
     caller: _TelegramAPICall,
     request: Payload iso,
@@ -49,12 +74,17 @@ actor TelegramAPI
     else
       _logger(lgr.Error) and _logger.log("Error: Call to API client failed.")
     end
+*/
 
+/*  // Client moved to _TelegramAPICall for time being
   be client_send_body(
     data: (String val | Array[U8 val] val),
-    session: HTTPSession tag)
+    session: HTTPSession tag,
+    caller: _TelegramAPICall) // TODO: Temporary
   =>
-    _client.send_body(data, session)
+    // _client.send_body(data, session)
+    caller.client.send_body(data, session)
+*/
 
   be log(level: lgr.LogLevel, message: String) =>
     _logger(level) and _logger.log(message)
@@ -68,13 +98,18 @@ actor _TelegramAPICall
   let _method: GeneralTelegramMethod iso
   var _response: (Payload val | None) = None
   var _body: Array[U8 val] iso
+  let client: HTTPClient // TODO: Temporary
 
   new create(
     logger: lgr.Logger[String],
     api: TelegramAPI tag,
     url_base: URL,
-    method: GeneralTelegramMethod iso)
+    method: GeneralTelegramMethod iso,
+    client': HTTPClient iso) // TODO: Temporary
   =>
+    // TODO: Temporary
+    client = consume client'
+
     // An object that will produce response handlers to a request as needed.
     let handle_maker = recover val APIResponseNotifyFactory.create(this) end
 
@@ -93,7 +128,7 @@ actor _TelegramAPICall
     request("User-Agent") = "Pony Telegram Bot" // TODO: Make user-agent setable
 
     match request.method
-    | "Get" =>
+    | "GET" =>
       match method.params()
       | let jo: JsonObject val =>
         request("Content-type") = "application/json"
@@ -103,17 +138,31 @@ actor _TelegramAPICall
       request("Content-type") = "multipart/form-data"
       // TODO: Support "multipart/form-data" when uploading files.
       // Stream transfer mode setup..
-      // Send body data in with_sent_payload..
+      // Mark the data for Send body data in with_sent_payload..
+      // Use session from this caller's client if still doing things that way
     end
-
-    // Make the call
-    api.call_client(this, consume request, handle_maker)
 
     // Needed for later behavior calls on this object
     _logger = logger
     _api = api
     _method = consume method
     _body = recover _body.create() end
+
+    // Make the call
+    // api.call_client(this, consume request, handle_maker)
+    // TODO: Temporary local client calling ...
+    if request.url is url_base then
+      // In the unlikely occurance that the GeneralTelegramMethod name is empty.
+      logger(lgr.Error) and logger.log(
+        "Error: GeneralTelegramMethod name() is empty.")
+      return
+    end
+    try
+      var payload_val: Payload val = client(consume request, handle_maker)
+      with_sent_payload(payload_val)
+    else
+      logger(lgr.Error) and logger.log("Error: Call to API client failed.")
+    end
 
   be with_sent_payload(request: Payload val) =>
     _logger(lgr.Info) and _logger.log(

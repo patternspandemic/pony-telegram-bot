@@ -57,7 +57,7 @@ actor Bot
       // Get certificate for HTTPS links.
       let sslctx =
         try
-          recover
+          recover val
             let caps =
               recover val FileCaps .> set(FileRead) .> set(FileStat) end
             let pem_path = FilePath(
@@ -65,8 +65,8 @@ actor Bot
               "cacert.pem",
               caps)
             SSLContext
-                .> set_client_verify(true)
-                .> set_authority(pem_path)
+              .> set_client_verify(true)
+              .> set_authority(pem_path)
           end
         else
           logger'(lgr.Error) and logger'.log(
@@ -74,17 +74,18 @@ actor Bot
           error
         end
 
-      // An HTTP client to supply to the API.
-      let client: HTTPClient iso =
-        try
-          recover HTTPClient(env.root as AmbientAuth, consume sslctx) end
-        else
-          logger'(lgr.Error) and logger'.log(
-            "Error: Unable to use network.")
-          error
-        end
+      // // An HTTP client to supply to the API.
+      // let client: HTTPClient iso =
+      //   try
+      //     recover HTTPClient(env.root as AmbientAuth, consume sslctx) end
+      //   else
+      //     logger'(lgr.Error) and logger'.log(
+      //       "Error: Unable to use network.")
+      //     error
+      //   end
 
-      api' = TelegramAPI.create(logger', url_base, consume client)
+      // api' = TelegramAPI.create(logger', url_base, consume client)
+      api' = TelegramAPI.create(logger', url_base, sslctx, env)
     else
       logger'(lgr.Error) and logger'.log(
         "Error: Could not establish TelegramAPI connection.")
