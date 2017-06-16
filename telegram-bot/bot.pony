@@ -1,7 +1,9 @@
 use "net/http"
 use lgr = "logger"
-use "net/ssl"
-use "files"
+//use "net/ssl"
+//use "files"
+
+use "debug"
 
 actor Bot
   let _logger: lgr.Logger[String]
@@ -54,25 +56,27 @@ actor Bot
         error
       end
 
-      // Get certificate for HTTPS links.
-      let sslctx =
-        try
-          recover val
-            let caps =
-              recover val FileCaps .> set(FileRead) .> set(FileStat) end
-            let pem_path = FilePath(
-              env.root as AmbientAuth,
-              "cacert.pem",
-              caps)
-            SSLContext
-              .> set_client_verify(true)
-              .> set_authority(pem_path)
-          end
-        else
-          logger'(lgr.Error) and logger'.log(
-            "Error: Unable to set SSLContext.")
-          error
-        end
+/* SSLContext and HTTPClient creation moved to _TelegramAPICall for now */
+
+      // // Get certificate for HTTPS links.
+      // let sslctx =
+      //   try
+      //     recover iso // val
+      //       let caps =
+      //         recover val FileCaps .> set(FileRead) .> set(FileStat) end
+      //       let pem_path = FilePath(
+      //         env.root as AmbientAuth,
+      //         "cacert.pem",
+      //         caps)
+      //       SSLContext
+      //         .> set_client_verify(true)
+      //         .> set_authority(pem_path)
+      //     end
+      //   else
+      //     logger'(lgr.Error) and logger'.log(
+      //       "Error: Unable to set SSLContext.")
+      //     error
+      //   end
 
       // // An HTTP client to supply to the API.
       // let client: HTTPClient iso =
@@ -85,7 +89,7 @@ actor Bot
       //   end
 
       // api' = TelegramAPI.create(logger', url_base, consume client)
-      api' = TelegramAPI.create(logger', url_base, sslctx, env)
+      api' = TelegramAPI.create(logger', url_base, env)
     else
       logger'(lgr.Error) and logger'.log(
         "Error: Could not establish TelegramAPI connection.")
@@ -122,7 +126,9 @@ actor Bot
 
   be apply(method: GeneralTelegramMethod iso) =>
     match api
-    | let api': TelegramAPI => api'(consume method)
+    | let api': TelegramAPI =>
+      api'(consume method)
+      Debug.out("Called api from Bot.apply ***************************")
     | None => _logger(lgr.Warn) and _logger.log(
       "Bot attempted to use API without it set.")
     end

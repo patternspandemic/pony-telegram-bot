@@ -3,11 +3,13 @@ Caller for the Telegram Bot API
 https://core.telegram.org/bots/api
 """
 
+use "debug"
+
 use "net/http"
+use "net/ssl"
 use lgr = "logger"
 use "format"
 use "collections"
-use "net/ssl"
 use "files"
 use "json"
 
@@ -16,42 +18,63 @@ actor TelegramAPI
   Lowest level interation with the Telegram API.
   """
   let _logger: lgr.Logger[String]
-  //let _client: HTTPClient
   let _url_base: URL
-  let _sslctx: SSLContext val // TODO: Temporary
-  let _env: Env // TODO: Temporary
+  // let _client: HTTPClient
+  // let _sslctx: SSLContext ref // TODO: Temporary
+  let _env: Env // TODO: Temporary, needed for ssl context creation
 
   // For the time being, each _TelegramAPICall needs its own HTTPClient, due to
   // the way multiple request/responses work over a session (can't be paired up)
   new create(
     logger': lgr.Logger[String],
     url_base': URL,
-    sslctx: SSLContext val,
     env: Env)
-    //client': HTTPClient iso)
+    // sslctx: SSLContext iso, //val
+    // client': HTTPClient iso)
   =>
     _logger = logger'
     _url_base = url_base'
-    // _client = consume client'
     _env = env
-    _sslctx = sslctx
+    // _client = consume client'
+    // _sslctx = consume sslctx
 
   be apply(method: GeneralTelegramMethod iso) =>
-    // TODO: Use improved HTTPClient if/when available,
+    Debug.out("-_-_-_-_-> Entered API apply")
+    // TODO: Use an improved HTTPClient if/when available,
     // until then create a client for each _TelegramAPICall
     // ...
-    // An HTTP client to supply to the _TelegramAPICall.    
+    // Get certificate for HTTPS links.
     try
+      let sslctx =
+        try
+          recover val
+            let caps =
+              recover val FileCaps .> set(FileRead) .> set(FileStat) end
+            let pem_path = FilePath(
+              _env.root as AmbientAuth,
+              "cacert.pem",
+              caps)
+            SSLContext
+              .> set_client_verify(true)
+              .> set_authority(pem_path)
+          end
+        else
+          _logger(lgr.Error) and _logger.log(
+            "Error: Unable to set SSLContext.")
+          error
+        end
+      // An HTTP client to supply to the _TelegramAPICall.
       let client: HTTPClient iso = recover
-        HTTPClient(_env.root as AmbientAuth, _sslctx)
+        HTTPClient(_env.root as AmbientAuth, sslctx)
       end
       _TelegramAPICall(_logger, this, _url_base, consume method, consume client)
+      Debug.out("Created _TelegramAPICall from API ***************************")
     else
       _logger(lgr.Error) and _logger.log(
         "Error: Unable to use network.")
-      // error
     end
 
+    // For when TelegramAPI holds the HTTP client
     // _TelegramAPICall(_logger, this, _url_base, consume method)
     
 
@@ -98,7 +121,7 @@ actor _TelegramAPICall
   let _method: GeneralTelegramMethod iso
   var _response: (Payload val | None) = None
   var _body: Array[U8 val] iso
-  let client: HTTPClient // TODO: Temporary
+  var client: (HTTPClient | None) // TODO: Temporary
 
   new create(
     logger: lgr.Logger[String],
@@ -107,9 +130,6 @@ actor _TelegramAPICall
     method: GeneralTelegramMethod iso,
     client': HTTPClient iso) // TODO: Temporary
   =>
-    // TODO: Temporary
-    client = consume client'
-
     // An object that will produce response handlers to a request as needed.
     let handle_maker = recover val APIResponseNotifyFactory.create(this) end
 
@@ -155,14 +175,19 @@ actor _TelegramAPICall
       // In the unlikely occurance that the GeneralTelegramMethod name is empty.
       logger(lgr.Error) and logger.log(
         "Error: GeneralTelegramMethod name() is empty.")
+      // TODO: Temporary
+      client = consume client'
       return
     end
     try
-      var payload_val: Payload val = client(consume request, handle_maker)
+      var payload_val: Payload val = client'(consume request, handle_maker)
       with_sent_payload(payload_val)
     else
       logger(lgr.Error) and logger.log("Error: Call to API client failed.")
     end
+
+    // TODO: Temporary
+    client = consume client'
 
   be with_sent_payload(request: Payload val) =>
     _logger(lgr.Info) and _logger.log(
@@ -173,7 +198,6 @@ actor _TelegramAPICall
       _logger(lgr.Info) and _logger.log(params.string("  ", true))
       _logger(lgr.Info) and _logger.log(" .")
     end
-
     // TODO:
     // If transfer_mode is Stream or Chunked (either marked on payload or this
     // _TelegramAPICall), Send body data via session returned in payload, i.e.
@@ -182,9 +206,11 @@ actor _TelegramAPICall
     None
 
   be cancelled() =>
+    """"""
     // TODO: Consider retrying API method call? What are consequences?
     _logger(lgr.Warn) and _logger.log(
       "Warning: Cancelled API call: " + _method.name())
+    _method.reject()
 
   be have_response(response: Payload val) =>
     if response.status == 0 then
@@ -229,7 +255,7 @@ actor _TelegramAPICall
     // out of the response body, and fullfilling the method's promise with its
     // result as json string.
 
-    // FIXME: Maybe better way than destructive read?
+    // FIXME: Might there be a better way than a destructive read?
     let body: Array[U8 val] iso = _body = recover _body.create() end
     let body_val: Array[U8 val] val = consume body
     let body_string: String = String.from_array(body_val)
@@ -260,6 +286,7 @@ actor _TelegramAPICall
         ok = jo.data("ok") as Bool
         try description = jo.data("description") as String end
         if ok then
+          // TODO: Match on JsonTypes, for instance GetChatMembersCount return an integer.
           // TODO: Match on JsonArray as well, for i.e. updates, other methods
           // returning array of ...
           result = (jo.data("result") as JsonObject).string()
@@ -296,6 +323,9 @@ actor _TelegramAPICall
       _logger(lgr.Info) and _logger.log(" .")
     end
     // TODO: Add error 'parameters': information to TelegramAPIMethodResponse
+    
+    _response = None
+    client = None
 
 class APIResponseNotifyFactory is HandlerFactory
   let _main: _TelegramAPICall
@@ -337,3 +367,4 @@ class APIResponseNotify is HTTPHandler
 
   fun ref cancelled() =>
     _main.cancelled()
+    _session.dispose() // Needed?

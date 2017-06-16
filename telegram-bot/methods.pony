@@ -51,7 +51,7 @@ type TelegramMethod is
   ( GetUpdates
   | SetWebhook
   | DeleteWebhook
-  | GetWebhook
+  | GetWebhookInfo
   | GetMe
   | SendMessage
   | ForwardMessage
@@ -117,10 +117,10 @@ primitive DeleteWebhook is PrimitiveMethod
   fun tag self(): TelegramMethod => this
   fun tag string(): String => "deleteWebhook"
 
-// getWebhook -> WebhookInfo
-primitive GetWebhook is PrimitiveMethod
+// getWebhookInfo -> WebhookInfo
+primitive GetWebhookInfo is PrimitiveMethod
   fun tag self(): TelegramMethod => this
-  fun tag string(): String => "getWebhook"
+  fun tag string(): String => "getWebhookInfo"
 
 // getMe -> User
 primitive GetMe is PrimitiveMethod
@@ -332,7 +332,6 @@ primitive GetGameHighScores is PrimitiveMethod
 trait GeneralTelegramMethod
   fun telegram_method(): TelegramMethod
   fun request_method(): String
-  //fun params(): Optional[Map[String val, JsonType ref] val]
   fun params(): Optional[JsonObject val]
   fun name(): String
   fun fulfill(method_response: TelegramAPIMethodResponse val)
@@ -349,19 +348,21 @@ trait GeneralTelegramMethod
 class iso PromisedTelegramMethod is GeneralTelegramMethod
   let _telegram_method: PrimitiveMethod
   let _request_method: String
-  //let _params: Optional[Map[String val, JsonType ref] val]
-  let _params: Optional[JsonObject val]
+  var _params: Optional[JsonObject val]
   let _promise: Promise[TelegramAPIMethodResponse]
 
   new iso create(
     telegram_method': PrimitiveMethod,
     request_method': String,
-    //params': Optional[Map[String val, JsonType ref] iso] = None)
     params': Optional[JsonObject iso] = None)
   =>
     _telegram_method = telegram_method'
     _request_method = request_method'
+
     _params = recover val consume params' end
+    // _params = recover val JsonObject.create() end
+    // _params = None
+
     _promise = Promise[TelegramAPIMethodResponse]
 
   fun ref next[T: Any #share](
@@ -389,14 +390,11 @@ class iso PromisedTelegramMethod is GeneralTelegramMethod
   fun request_method(): String =>
     _request_method
 
-  //fun params(): Optional[Map[String val, JsonType ref] val] =>
   fun params(): Optional[JsonObject val] =>
     _params
 
   fun name(): String =>
     _telegram_method.string()
-
-
 
 /*
 // BELOW IS OLD
@@ -442,7 +440,7 @@ class GetUpdates is TelegramMethod
 
 // setWebhook -> True
 // deleteWebhook -> True
-// getWebhook -> WebhookInfo
+// getWebhookInfo -> WebhookInfo
 
 // getMe -> User
 class GetMe is TelegramMethod
