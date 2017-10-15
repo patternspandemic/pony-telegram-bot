@@ -34,7 +34,7 @@ actor Bot
       let url: String = endpoint + "bot" + api_token + "/"
       let url_base: URL =
         try
-          URL.valid(url)
+          URL.valid(url)?
         else
           logger'(lgr.Error) and logger'.log(
             "Error: Invalid API endpoint: " + url)
@@ -42,11 +42,11 @@ actor Bot
         end
       logger'(lgr.Info) and logger'.log("     with endpoint: " + endpoint)
       try
-        api_token.find(":")
+        api_token.find(":")?
         if logger'(lgr.Info) then
           let split_token = api_token.split_by(":")
-          let id = split_token.shift()
-          let key = split_token.pop()
+          let id = split_token.shift()?
+          let key = split_token.pop()?
           let tok = id + ":..." + key.trim(key.size() - 6, key.size())
           logger'.log("     with API token: " + tok)
         end

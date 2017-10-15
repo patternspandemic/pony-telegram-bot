@@ -45,7 +45,7 @@ primitive JsonHelper
       try
         let str: String = optional_json_str as String
         let doc: JsonDoc ref = JsonDoc.create()
-        doc.parse(str)
+        doc.parse(str)?
         match doc.data
         | let d: JsonObject => d
         else
@@ -184,7 +184,7 @@ class Updates is TelegramObject
     let doc: JsonDoc ref = JsonDoc.create()
     json =
       try
-        doc.parse(json_str')
+        doc.parse(json_str')?
         doc.data as JsonArray
       else
         // TODO: Warn via api or bot that couldn't parse update array in json_str' ?
@@ -230,7 +230,7 @@ class Update is TelegramObject
     let doc: JsonDoc ref = JsonDoc.create()
     json =
       try
-        doc.parse(json_str')
+        doc.parse(json_str')?
         doc.data as JsonObject
       else
         // TODO: Warn via api or bot that couldn't parse update in json_str' ?

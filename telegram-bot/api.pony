@@ -7,6 +7,7 @@ use "debug"
 
 use "net/http"
 use "net/ssl"
+
 use lgr = "logger"
 use "format"
 use "collections"
@@ -53,10 +54,10 @@ actor TelegramAPI
             let pem_path = FilePath(
               _env.root as AmbientAuth,
               "cacert.pem",
-              caps)
+              caps)?
             SSLContext
               .> set_client_verify(true)
-              .> set_authority(pem_path)
+              .> set_authority(pem_path)?
           end
         else
           _logger(lgr.Error) and _logger.log(
@@ -136,7 +137,7 @@ actor _TelegramAPICall
     // Construct the complete URL
     let request_url: URL =
       try
-        URL.valid(url_base.string() + method.name())
+        URL.valid(url_base.string() + method.name())?
       else
         logger(lgr.Error) and logger.log(
           "Error: Invalid URL after appending GeneralTelegramMethod name()")
@@ -180,7 +181,7 @@ actor _TelegramAPICall
       return
     end
     try
-      var payload_val: Payload val = client'(consume request, handle_maker)
+      var payload_val: Payload val = client'(consume request, handle_maker)?
       with_sent_payload(payload_val)
     else
       logger(lgr.Error) and logger.log("Error: Call to API client failed.")
@@ -230,7 +231,7 @@ actor _TelegramAPICall
 
     try
       let body_size = response.body_size() as USize
-      let data = response.body()
+      let data = response.body()?
       if body_size > 0 then
         for piece in data.values() do
           match piece
@@ -263,7 +264,7 @@ actor _TelegramAPICall
 
     _logger(lgr.Info) and _logger.log(" .. Body:")
     try
-      json_doc.parse(body_string)
+      json_doc.parse(body_string)?
       _logger(lgr.Info) and _logger.log(json_doc.string("  ", true))
     else
       // TODO: Perhaps should be error?
@@ -283,13 +284,13 @@ actor _TelegramAPICall
       match json_doc.data
       | let jo: JsonObject =>
         // assign to above vars based on 'ok' bool
-        ok = jo.data("ok") as Bool
-        try description = jo.data("description") as String end
+        ok = jo.data("ok")? as Bool
+        try description = jo.data("description")? as String end
         if ok then
           // TODO: Match on JsonTypes, for instance GetChatMembersCount return an integer.
           // TODO: Match on JsonArray as well, for i.e. updates, other methods
           // returning array of ...
-          result = (jo.data("result") as JsonObject).string()
+          result = (jo.data("result")? as JsonObject).string()
           let method_response: TelegramAPIMethodResponse val =
             TelegramAPIMethodResponse(_api, result as String)
           _method.fulfill(method_response)
@@ -298,8 +299,8 @@ actor _TelegramAPICall
           // TODO: Handle unavailable chats, flood control, etc.
           //   - Resend when chat migrated
           //   - Ask api to wait to process when flood control occurs
-          error_code = jo.data("error_code") as I64
-          try error_params = (jo.data("parameters") as JsonObject).string() end
+          error_code = jo.data("error_code")? as I64
+          try error_params = (jo.data("parameters")? as JsonObject).string() end
           // ... reject for now ...
           // ... but maybe fulfill with TelegramAPIMethodResponse w/error info
           _method.reject()
